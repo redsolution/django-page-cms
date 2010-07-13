@@ -5,10 +5,7 @@ $(function() {
     // Automatically update the slug when typing the title
     var slug_auto = $("#id_title").attr("value") == "";
     var slug = $("#id_slug").change(function() {
-        if ($("#id_slug").attr("value") == "")
-            slug_auto = true;
-        else
-            slug_auto = false;
+    	slug_auto = $("#id_slug").attr("value") == "";
     });
     $("#id_title").keyup(function() {
         if(slug_auto)
