@@ -11,12 +11,14 @@ from django.core.cache import cache
 from pages import settings
 from pages.utils import normalize_url, filter_link
 
+PAGE_CONTENT_DICT_KEY = "page_content_dict_%s_%s"
+
 class PageManager(models.Manager):
     """
     Page manager provide several filters to obtain pages :class:`QuerySet`
     that respect the page settings.
     """
-    
+
     def on_site(self, site_id=None):
         """Return a :class:`QuerySet` of pages that are published on the site
         defined by the ``SITE_ID`` setting.
@@ -118,7 +120,7 @@ class ContentManager(models.Manager):
         :param body: the content of the Content object.
         """
         if settings.PAGE_SANITIZE_USER_INPUT:
-            body = self.sanitize(body)       
+            body = self.sanitize(body)
         try:
             content = self.filter(page=page, language=language,
                                   type=ctype).latest('creation_date')
@@ -127,6 +129,7 @@ class ContentManager(models.Manager):
             content = self.model(page=page, language=language, body=body,
                                  type=ctype)
         content.save()
+        cache.delete(PAGE_CONTENT_DICT_KEY % (str(page.id), ctype))
         return content
 
     def create_content_if_changed(self, page, language, ctype, body):
@@ -150,6 +153,7 @@ class ContentManager(models.Manager):
             pass
         content = self.create(page=page, language=language, body=body,
                 type=ctype)
+        cache.delete(PAGE_CONTENT_DICT_KEY % (str(page.id), ctype))
 
     def get_content(self, page, language, ctype, language_fallback=False):
         """Gets the latest :class:`Content <pages.models.Content>`
@@ -161,7 +165,6 @@ class ContentManager(models.Manager):
         :param ctype: the content type.
         :param language_fallback: fallback to another language if ``True``.
         """
-        PAGE_CONTENT_DICT_KEY = "page_content_dict_%s_%s"
         if not language:
             language = settings.PAGE_DEFAULT_LANGUAGE
 
@@ -217,9 +220,9 @@ class ContentManager(models.Manager):
             FROM pages_content WHERE (pages_content.type = %s
             AND pages_content.body =%s)
             GROUP BY pages_content.page_id'''
-            
+
         cursor = connection.cursor()
-        cursor.execute(sql, ('slug', slug, ))
+        cursor.execute(sql, ('slug', slug,))
         return [c[0] for c in cursor.fetchall()]
 
 class PagePermissionManager(models.Manager):
