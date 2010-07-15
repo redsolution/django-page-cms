@@ -6,12 +6,9 @@ from django.db import models, connection
 from django.contrib.sites.managers import CurrentSiteManager
 from django.contrib.sites.models import Site
 from django.db.models import Q
-from django.core.cache import cache
 
 from pages import settings
 from pages.utils import normalize_url, filter_link
-
-PAGE_CONTENT_DICT_KEY = "page_content_dict_%s_%s"
 
 class PageManager(models.Manager):
     """
@@ -129,7 +126,6 @@ class ContentManager(models.Manager):
             content = self.model(page=page, language=language, body=body,
                                  type=ctype)
         content.save()
-        cache.delete(PAGE_CONTENT_DICT_KEY % (str(page.id), ctype))
         return content
 
     def create_content_if_changed(self, page, language, ctype, body):
@@ -153,7 +149,6 @@ class ContentManager(models.Manager):
             pass
         content = self.create(page=page, language=language, body=body,
                 type=ctype)
-        cache.delete(PAGE_CONTENT_DICT_KEY % (str(page.id), ctype))
 
     def get_content(self, page, language, ctype, language_fallback=False):
         """Gets the latest :class:`Content <pages.models.Content>`
@@ -168,8 +163,7 @@ class ContentManager(models.Manager):
         if not language:
             language = settings.PAGE_DEFAULT_LANGUAGE
 
-        content_dict = cache.get(PAGE_CONTENT_DICT_KEY % (str(page.id), ctype))
-        #content_dict = None
+        content_dict = None
 
         if not content_dict:
             content_dict = {}
@@ -183,7 +177,6 @@ class ContentManager(models.Manager):
                     content_dict[lang[0]] = content.body
                 except self.model.DoesNotExist:
                     content_dict[lang[0]] = ''
-            cache.set(PAGE_CONTENT_DICT_KEY % (page.id, ctype), content_dict)
 
         if language in content_dict and content_dict[language]:
             return filter_link(content_dict[language], page, language, ctype)
