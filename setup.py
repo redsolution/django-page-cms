@@ -2,20 +2,20 @@
 from setuptools import setup, find_packages
 
 setup(
-    name='django-page-cms',
-    test_suite = "example.test_runner.run_tests",
+    name='grandma.django-page-cms',
+    test_suite="example.test_runner.run_tests",
     version=__import__('pages').__version__,
     description='A tree based Django CMS application',
     author='Batiste Bieler',
     author_email='batiste.bieler@gmail.com',
     url='http://code.google.com/p/django-page-cms/',
     download_url='http://code.google.com/p/django-page-cms/downloads/list',
-    requires=(
-        'html5lib (>=0.10)',
-        'tagging (>0.2.1)', # please use the trunk version of tagging
-        'django_mptt (>0.2.1)', # please use the trunk version of django mptt
+    install_requires=(
+        'html5lib>=0.10',
+        'django-tagging>0.2.1',
+        'django-mptt-2>0.2.1',
     ),
-    #packages=find_packages(exclude=['example', 'example.*']),
+    packages=find_packages(exclude=['example', 'example.*']),
     include_package_data=True, # include package data under svn source control
     zip_safe=False,
     classifiers=[
@@ -30,4 +30,7 @@ setup(
         'Programming Language :: JavaScript',
         'Topic :: Internet :: WWW/HTTP :: Site Management',
     ],
+    entry_points={
+        'grandma_setup': ['pages = pages.grandma_setup', ],
+    }
 )

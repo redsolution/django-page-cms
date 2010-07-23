@@ -1,0 +1,21 @@
+{% load grandma_tags %}
+{% raw %}
+    {% extends 'pages/base.html' %}
+    {% load pages_tags %}
+
+
+    {% block content %}
+        {{ block.super }}
+    {% endraw %}
+    {% if pages_settings.trustedhtml_installed %}
+    {% raw %}    
+        {% placeholder main_content with trustedhtml.widgets.TrustedTextarea %}
+    {% endraw %}
+    {% else %}
+    {% raw %}
+        {% placeholder main_content with TextArea %}
+    {% endraw %}
+    {% endif %}
+{% raw %}
+    {% endblock  %}
+{% endraw %}
