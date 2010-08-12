@@ -1,14 +1,14 @@
 from grandma.admin import GrandmaBaseAdmin
 from django.contrib import admin
-from models import PagesSettings, PageLanguage, PageTemplate
+from models import PagesSettings, PageTemplate
+from coverage import exclude
 
 
 class TemplateInline(admin.TabularInline):
     model = PageTemplate
 
-class LanguageInline(admin.TabularInline):
-    model = PageLanguage
 
 class PagesSettingsAdmin(GrandmaBaseAdmin):
     model = PagesSettings
-    inlines = [TemplateInline, LanguageInline]
+    inlines = [TemplateInline]
+    exclude = ['validation_backend',]

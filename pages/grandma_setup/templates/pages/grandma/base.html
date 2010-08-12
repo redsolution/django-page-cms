@@ -1,35 +1,29 @@
-{% load grandma_tags %}{% raw %}{% extends "base.html" %}
+{% load grandma_tags %}{% raw %}
+{% extends "base.html" %}
 {% load i18n pages_tags %}
 
+{# title on page, H1 for example #}
 {% block content_title %}
     {% get_content current_page "long_title" as long_title %}
     {% if long_title %}
         {% placeholder long_title with TextInput %}
-    {%else %}
+    {% else %}
         {% placeholder title %}
     {% endif %}
 {% endblock %}
-
-{% block content %}
 {% endraw %}
-{% if pages_settings.menu_proxy_was_installed %}
+
+{% if 'grandma.django-seo' in cms_settings.installed_packages %}
 {% raw %}
-    {% load menuproxy_tags %}
-    {% block breadcrumbs %}{% show_breadcrumbs 'pages' current_page %}{% endblock %}
+{% block keywords %}{% seo keywords for current_page %}{% endblock %}
+{% block description %}{% seo description for current_page %}{% endblock %}" 
+{% block title %}{% seo title for current_page as title %}{% if title %}{{ title }}{% else %}{% placeholder title %}{% endif %}{% endblock %}
 {% endraw %}
 {% endif %}
 
-{% if pages_settings.seo_was_installed %}
+{% if 'grandma.django-menu-proxy' in cms_settings.installed_packages %}
 {% raw %}
-	{% load seo_tags %}
-	{% block keywords %}{% seo keywords for current_page %}{% endblock %}
-	{% block description %}{% seo description for current_page %}{% endblock %}
-	{% block title %}{% seo title for current_page as title %}
-	{% if title %}{{ title }}{% else %}{% placeholder title %}{% endif %}{% endblock %}
+{% block breadcrumbs %}{% show_breadcrumbs 'pages' current_page %}{% endblock %}
+{% block menu %}{% show_auto_menu 'pages' current_page %}{% endblock %}
 {% endraw %}
 {% endif %}
-{% raw %}
-{% endblock %}
-{% endraw %}
-
-

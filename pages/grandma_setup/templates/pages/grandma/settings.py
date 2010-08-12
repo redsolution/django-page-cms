@@ -1,20 +1,45 @@
 # django-page-cms
+
 INSTALLED_APPS += [
     'tagging',
     'pages',
-    ]
-
-TEMPLATE_CONTEXT_PROCESSORS += ('pages.context_processors.media',)
-
-MIDDLEWARE_CLASSES += (
+]
+MIDDLEWARE_CLASSES += [
     'django.middleware.doc.XViewMiddleware',
     'django.middleware.locale.LocaleMiddleware',
-    )
+]
 
-CACHE_BACKEND = "locmem:///?max_entries=5000"
-
+TEMPLATE_CONTEXT_PROCESSORS += ('pages.context_processors.media',)
 DEFAULT_PAGE_TEMPLATE = 'pages/index.html'
 
-PAGE_TEMPLATES = (
-   ('pages/frontpage.html', u'Main page'),
+# Default settings, they should  be customizable 
+PAGE_TAGGING = False
+PAGE_PERMISSION = False
+PAGE_HIDE_ROOT_SLUG = True
+PAGE_LANGUAGES = (
+    ('ru', gettext_noop('Russian')),
+    ('en', gettext_noop('English')),
 )
+
+# Customizable settings
+
+{% if 'grandma.django-tinymce-attachment' in cms_settings.installed_packages %}
+PAGE_TINYMCE = True
+{% endif %}
+
+PAGE_TEMPLATES = (
+{% for template in pages_settings.templates.all %}
+   ('pages/{{ template.filename }}', u'{{ template.verbose_name }}'),
+{% endfor %}
+)
+
+{% if pages_settings.validate %}
+{% if pages_settings.validation_backend == 'html5lib' %}
+INSTALLED_APPS += [
+    'html5lib',
+]
+PAGE_SANITIZE_USER_INPUT = True
+{% endif %}
+{% else %}
+PAGE_SANITIZE_USER_INPUT = False
+{% endif %}

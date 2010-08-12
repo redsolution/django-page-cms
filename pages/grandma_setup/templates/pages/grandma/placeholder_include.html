@@ -1,0 +1,13 @@
+{# inserts placholder with {{ placeholder }} name #}
+{# takes into account validation setting #}
+
+{% load grandma_tags %}
+{% if pages_settings.validate and pages_settings.validation_backend == 'trustedhtml' %}
+    {% raw %}    
+        {% placeholder {% endraw %}{{ placholder }}{% raw %}main_content with trustedhtml.widgets.TrustedTinyMCE %}
+    {% endraw %}
+{% else %}
+    {% raw %}
+        {% placeholder {% endraw %}{{ placholder }}{% raw %} with tinymce.widgets.AdminTinyMCE %}
+    {% endraw %}
+{% endif %}

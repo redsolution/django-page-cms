@@ -1,3 +1,3 @@
 urlpatterns += patterns('',
-    (r'^', include('pages.urls')),
-    )
+    (r'^pages', include('pages.urls')),
+)
