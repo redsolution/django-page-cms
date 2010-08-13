@@ -52,6 +52,12 @@ class Make(BaseMake):
                 join(pages_media_dir, 'pages'),
                 join(project_media_dir, 'pages'),
             )
+        else:
+            from config.grandma_setup.models import ConfigSettings
+            config_settings = ConfigSettings.objects.get_settings()
+            config_settings.appmedia.objects.create(
+                appname='pages', source='pages', target='pages',
+            )
 
         if 'grandma.django-menu-proxy' in cms_settings.installed_packages:
             cms_settings.render_to('settings.py', 'pages/grandma/settings_menu.py')

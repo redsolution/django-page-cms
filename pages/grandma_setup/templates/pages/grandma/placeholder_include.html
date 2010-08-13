@@ -4,7 +4,6 @@
 {% load grandma_tags %}
 {% if pages_settings.validate and pages_settings.validation_backend == 'trustedhtml' %}
     {% templatetag openblock %} placeholder {{ placholder }} main_content with trustedhtml.widgets.TrustedTinyMCE {% templatetag closeblock %}
-    
 {% else %}
-    {% templatetag openblock %} placeholder {{ placholder }} main_content with trustedhtml.widgets.TrustedTinyMCE {% templatetag closeblock %}
+    {% templatetag openblock %} placeholder {{ placholder }} main_content with TinyMCE {% templatetag closeblock %}
 {% endif %}
