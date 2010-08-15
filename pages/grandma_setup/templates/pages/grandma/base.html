@@ -15,6 +15,7 @@
 
 {% if 'grandma.django-seo' in cms_settings.installed_packages %}
 {% raw %}
+{% load seo_tags %}
 {% block keywords %}{% seo keywords for current_page %}{% endblock %}
 {% block description %}{% seo description for current_page %}{% endblock %}" 
 {% block title %}{% seo title for current_page as title %}{% if title %}{{ title }}{% else %}{% placeholder title %}{% endif %}{% endblock %}
