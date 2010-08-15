@@ -15,43 +15,7 @@ class PageSettingsManager(BaseSettingsManager):
         else:
             pages_settings = self.get_query_set().create()
             cms_settings = GrandmaSettings.objects.get_settings()
-            
-            # Integration with django-seo
-            if 'grandma.django-seo' in cms_settings.installed_packages:
-                try:
-                    from seo.grandma_setup.models import SeoSettings
-                except ImportError:
-                    pass
-                else:
-                    seo_settings = SeoSettings.objects.get_settings()
-                    seo_settings.models.get_or_create(model='pages.models.Page')
-            # Integration with django-tinymce-attachments
-            if 'grandma.django-tinymce-attachments' in cms_settings.installed_packages:
-                try:
-                    from attachments.grandma_setup.models import AttachmentSettings
-                except ImportError:
-                    pass
-                else:
-                    attachment_settings = AttachmentSettings.objects.get_settings()
-                    attachment_settings.models.get_or_create(model='pages.models.Page')
-                    attachment_settings.links.get_or_create(model='pages.models.Page')
 
-            # Integration with django-model-url
-            if 'grandma.django-model-url' in cms_settings.installed_packages:
-                try:
-                    from modelurl.grandma_setup.models import ModelUrlSettings
-                except ImportError:
-                    pass
-                else:
-                    model_url_settings = ModelUrlSettings.objects.get_settings()
-                    model_url_settings.models.get_or_create(model='pages.models.Page')
-                    model_url_settings.views.get_or_create(view='pages.views.details', object='current_page')
-
-            # Integration with django-trustedhtml
-            if 'grandma.trustedhtml' in cms_settings.installed_packages:
-                pages_settings.validation_backend = 'trustedhtml'
-                pages_settings.save() 
-            
             return pages_settings
 
 
