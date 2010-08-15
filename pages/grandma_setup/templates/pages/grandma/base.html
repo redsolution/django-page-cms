@@ -24,6 +24,7 @@
 
 {% if 'grandma.django-menu-proxy' in cms_settings.installed_packages %}
 {% raw %}
+{% load menuproxy_tags %}
 {% block breadcrumbs %}{% show_breadcrumbs 'pages' current_page %}{% endblock %}
 {% block menu %}{% show_auto_menu 'pages' current_page %}{% endblock %}
 {% endraw %}
