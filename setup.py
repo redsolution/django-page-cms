@@ -2,10 +2,10 @@
 from setuptools import setup, find_packages
 
 setup(
-    name='grandma.django-page-cms',
+    name='redsolutioncms.django-page-cms',
     test_suite="example.test_runner.run_tests",
     version=__import__('pages').__version__,
-    description='A tree based Django CMS application',
+    description='A tree based Django CMS application, integrated with RedsolutionCMS',
     author='Batiste Bieler',
     author_email='batiste.bieler@gmail.com',
     url='http://code.google.com/p/django-page-cms/',
@@ -20,13 +20,14 @@ setup(
     zip_safe=False,
     classifiers=[
         'Development Status :: 5 - Production/Stable',
-        'Environment :: Web Environment',
         'Intended Audience :: Developers',
         'License :: OSI Approved :: BSD License',
+        'Framework :: Django',
+        'Environment :: Web Environment',
+        'Natural Language :: Russian',
+        'Natural Language :: English',
         'Operating System :: OS Independent',
         'Programming Language :: Python',
-        'Framework :: Django',
-        'Programming Language :: Python :: 2.3',
         'Programming Language :: JavaScript',
         'Topic :: Internet :: WWW/HTTP :: Site Management',
     ],
