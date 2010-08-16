@@ -22,9 +22,9 @@ class Make(BaseMake):
                 seo_settings = SeoSettings.objects.get_settings()
                 seo_settings.models.get_or_create(model='pages.models.Page')
         # Integration with django-tinymce-attachments
-        if 'grandma.django-tinymce-attachment' in cms_settings.installed_packages:
+        if 'redsolutioncms.django-tinymce-attachment' in cms_settings.installed_packages:
             try:
-                from attachments.grandma_setup.models import AttachmentSettings
+                from attachment.grandma_setup.models import AttachmentSettings
             except ImportError:
                 pass
             else:
@@ -99,7 +99,7 @@ class Make(BaseMake):
         else:
             from config.grandma_setup.models import ConfigSettings
             config_settings = ConfigSettings.objects.get_settings()
-            config_settings.appmedia.objects.create(
+            config_settings.appmedia.create(
                 appname='pages', source='pages', target='pages',
             )
 

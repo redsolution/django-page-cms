@@ -2,7 +2,7 @@
 
 INSTALLED_APPS += [
     'tagging',
-    {% if 'grandma.django-tinymce-attachment' in cms_settings.installed_packages %}
+    {% if 'redsolutioncms.django-tinymce' in cms_settings.installed_packages %}
     'tinymce',
     {% endif %}
     'pages',
@@ -27,7 +27,7 @@ PAGE_LANGUAGES = (
 
 # Customizable settings
 
-{% if 'grandma.django-tinymce-attachment' in cms_settings.installed_packages %}
+{% if 'redsolutioncms.django-tinymce' in cms_settings.installed_packages %}
 PAGE_TINYMCE = True
 {% else %}
 PAGE_TINYMCE = False

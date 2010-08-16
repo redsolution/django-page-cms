@@ -5,7 +5,7 @@
 {% if pages_settings.validate and pages_settings.validation_backend == 'trustedhtml' %}
     {% templatetag openblock %} placeholder {{ placholder }} main_content with trustedhtml.widgets.TrustedTinyMCE {% templatetag closeblock %}
 {% else %}
-    {% if 'grandma.django-tinymce-attachment' in cms_settings.installed_packages %}
+    {% if 'redsolutioncms.django-tinymce' in cms_settings.installed_packages %}
     {% templatetag openblock %} placeholder {{ placholder }} main_content with TinyMCE {% templatetag closeblock %}
     {% else %}
     {% templatetag openblock %} placeholder {{ placholder }} main_content with TextArea {% templatetag closeblock %}
