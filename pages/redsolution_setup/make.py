@@ -54,24 +54,24 @@ class Make(BaseMake):
         cms_settings = GrandmaSettings.objects.get_settings()
         pages_settings = PagesSettings.objects.get_settings()
 
-        cms_settings.render_to('settings.py', 'pages/grandma/settings.py', {
+        cms_settings.render_to('settings.py', 'pages/redsolutioncms/settings.py', {
             'pages_settings': pages_settings,
         })
-        cms_settings.render_to('urls.py', 'pages/grandma/urls.py', {
+        cms_settings.render_to('urls.py', 'pages/redsolutioncms/urls.py', {
             'pages_settings': pages_settings,
         })
 
         # render base and default templates
         cms_settings.render_to(['..', 'templates', 'pages', 'base.html'],
-            'pages/grandma/base.html', {}, 'w')
+            'pages/redsolutioncms/base.html', {}, 'w')
         cms_settings.render_to(['..', 'templates', 'pages', 'index.html'],
-            'pages/grandma/index.html', {
+            'pages/redsolutioncms/index.html', {
             'pages_settings': pages_settings,
         }, 'w')
         # render additional templates
         for template in pages_settings.templates.all():
             cms_settings.render_to(['..', 'templates', 'pages', '%s' % template.filename],
-                'pages/grandma/additional_template.html', {
+                'pages/redsolutioncms/additional_template.html', {
                 'pages_settings': pages_settings,
                 'template': template,
             }, 'w')

@@ -32,6 +32,6 @@ setup(
         'Topic :: Internet :: WWW/HTTP :: Site Management',
     ],
     entry_points={
-        'grandma_setup': ['pages = pages.grandma_setup', ],
+        'redsolution_setup': ['pages = pages.redsolution_setup', ],
     }
 )

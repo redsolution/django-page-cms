@@ -5,6 +5,6 @@ recursive-include doc *
 recursive-include pages/locale *
 recursive-include pages/media *
 recursive-include pages/templates *
+recursive-include pages/redsolution_setup *
 recursive-include example/fixtures *
 recursive-include example/templates *
-recursive-include example/grandma_setup *
