@@ -2,8 +2,12 @@
 
 INSTALLED_APPS += [
     'tagging',
+    {% if 'grandma.django-tinymce-attachment' in cms_settings.installed_packages %}
+    'tinymce',
+    {% endif %}
     'pages',
 ]
+
 MIDDLEWARE_CLASSES += [
     'django.middleware.doc.XViewMiddleware',
     'django.middleware.locale.LocaleMiddleware',
