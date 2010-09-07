@@ -1,7 +1,7 @@
 {# inserts placholder with {{ placeholder }} name #}
 {# takes into account validation setting #}
 
-{% load grandma_tags %}
+{% load redsolutioncms_tags %}
 {% if pages_settings.validate and pages_settings.validation_backend == 'trustedhtml' %}
     {% templatetag openblock %} placeholder {{ placholder }} main_content with trustedhtml.widgets.TrustedTinyMCE {% templatetag closeblock %}
 {% else %}

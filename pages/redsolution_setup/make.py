@@ -1,6 +1,6 @@
-from grandma.make import BaseMake
-from grandma.models import GrandmaSettings
-from pages.grandma_setup.models import PagesSettings
+from redsolutioncms.make import BaseMake
+from redsolutioncms.models import CMSSettings
+from pages.redsolution_setup.models import PagesSettings
 from os.path import dirname, join
 import shutil
 
@@ -9,13 +9,13 @@ class Make(BaseMake):
     def premake(self):
         super(Make, self).premake()
 
-        cms_settings = GrandmaSettings.objects.get_settings()
+        cms_settings = CMSSettings.objects.get_settings()
         pages_settings = PagesSettings.objects.get_settings()
 
         # Integration with django-seo
-        if 'grandma.django-seo' in cms_settings.installed_packages:
+        if 'redsolutioncms.django-seo' in cms_settings.installed_packages:
             try:
-                from seo.grandma_setup.models import SeoSettings
+                from seo.redsolution_setup.models import SeoSettings
             except ImportError:
                 pass
             else:
@@ -24,7 +24,7 @@ class Make(BaseMake):
         # Integration with django-tinymce-attachments
         if 'redsolutioncms.django-tinymce-attachment' in cms_settings.installed_packages:
             try:
-                from attachment.grandma_setup.models import AttachmentSettings
+                from attachment.redsolution_setup.models import AttachmentSettings
             except ImportError:
                 pass
             else:
@@ -33,9 +33,9 @@ class Make(BaseMake):
                 attachment_settings.links.get_or_create(model='pages.models.Page')
 
         # Integration with django-model-url
-        if 'grandma.django-model-url' in cms_settings.installed_packages:
+        if 'redsolutioncms.django-model-url' in cms_settings.installed_packages:
             try:
-                from modelurl.grandma_setup.models import ModelUrlSettings
+                from modelurl.redsolution_setup.models import ModelUrlSettings
             except ImportError:
                 pass
             else:
@@ -44,20 +44,20 @@ class Make(BaseMake):
                 model_url_settings.views.get_or_create(view='pages.views.details', object='current_page')
 
         # Integration with django-trustedhtml
-        if 'grandma.django-trusted-html' in cms_settings.installed_packages:
+        if 'redsolutioncms.django-trusted-html' in cms_settings.installed_packages:
             pages_settings.validation_backend = 'trustedhtml'
             pages_settings.save()
 
 
     def make(self):
         super(Make, self).make()
-        cms_settings = GrandmaSettings.objects.get_settings()
+        cms_settings = CMSSettings.objects.get_settings()
         pages_settings = PagesSettings.objects.get_settings()
 
-        cms_settings.render_to('settings.py', 'pages/redsolutioncms/settings.py', {
+        cms_settings.render_to('settings.py', 'pages/redsolutioncms/settings.pyt', {
             'pages_settings': pages_settings,
         })
-        cms_settings.render_to('urls.py', 'pages/redsolutioncms/urls.py', {
+        cms_settings.render_to('urls.py', 'pages/redsolutioncms/urls.pyt', {
             'pages_settings': pages_settings,
         })
 
@@ -78,7 +78,7 @@ class Make(BaseMake):
 
     def postmake(self):
         super(Make, self).postmake()
-        cms_settings = GrandmaSettings.objects.get_settings()
+        cms_settings = CMSSettings.objects.get_settings()
         pages_media_dir = join(dirname(dirname(__file__)), 'media')
         project_media_dir = join(cms_settings.project_dir, 'media')
 
@@ -89,7 +89,7 @@ class Make(BaseMake):
         except OSError:
             pass
 
-        if 'grandma.django-server-config' not in cms_settings.installed_packages:
+        if 'redsolutioncms.django-server-config' not in cms_settings.installed_packages:
 
 #           copy files to media directory
             shutil.copytree(
@@ -97,11 +97,11 @@ class Make(BaseMake):
                 join(project_media_dir, 'pages'),
             )
         else:
-            from config.grandma_setup.models import ConfigSettings
+            from config.redsolution_setup.models import ConfigSettings
             config_settings = ConfigSettings.objects.get_settings()
             config_settings.appmedia.create(
                 appname='pages', source='pages', target='pages',
             )
 
-        if 'grandma.django-menu-proxy' in cms_settings.installed_packages:
-            cms_settings.render_to('settings.py', 'pages/grandma/settings_menu.py')
+        if 'redsolutioncms.django-menu-proxy' in cms_settings.installed_packages:
+            cms_settings.render_to('settings.py', 'pages/redsolutioncms/settings_menu.pyt')

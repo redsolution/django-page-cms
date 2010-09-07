@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 from django.conf.urls.defaults import patterns, url
-from pages.grandma_setup.admin import PagesSettingsAdmin
+from pages.redsolution_setup.admin import PagesSettingsAdmin
 admin_instance = PagesSettingsAdmin()
 
 urlpatterns = patterns('',

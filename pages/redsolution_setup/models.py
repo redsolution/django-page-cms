@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 from django.db import models
 from django.utils.translation import ugettext_lazy as _
-from grandma.models import BaseSettings, GrandmaSettings, BaseSettingsManager
+from redsolutioncms.models import BaseSettings, CMSSettings, BaseSettingsManager
 
 TEMPLATE_TYPES = (
     (0, _('One column')),
@@ -14,7 +14,7 @@ class PageSettingsManager(BaseSettingsManager):
             return self.get_query_set()[0]
         else:
             pages_settings = self.get_query_set().create()
-            cms_settings = GrandmaSettings.objects.get_settings()
+            cms_settings = CMSSettings.objects.get_settings()
 
             return pages_settings
 

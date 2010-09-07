@@ -1,4 +1,4 @@
-{% load grandma_tags %}
+{% load redsolutioncms_tags %}
 {% raw %}
     {% extends 'pages/base.html' %}
     {% load pages_tags %}
@@ -11,7 +11,7 @@
 {% if template.type == 0 %} {# one column #}
     <div class="one-column">
     {% with 'main_content' as placeholder %}
-    {% include "pages/grandma/placeholder_include.html" %}
+    {% include "pages/redsolutioncms/placeholder_include.html" %}
     {% endwith %}
     </div>
 {% endif %}
@@ -20,12 +20,12 @@
     <div class="two-columns">
     <div class="col1">
     {% with 'main_content' as placeholder %}
-    {% include "pages/grandma/placeholder_include.html" %}
+    {% include "pages/redsolutioncms/placeholder_include.html" %}
     {% endwith %}
     </div>
     <div class="col2">
     {% with 'right_content' as placeholder %}
-    {% include "pages/grandma/placeholder_include.html" %}
+    {% include "pages/redsolutioncms/placeholder_include.html" %}
     {% endwith %}
     </div>
     </div>
