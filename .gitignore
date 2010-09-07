@@ -1,6 +1,14 @@
+.svn
+*.orig
+*.pyc
+.project
+.pydevproject
+.settings
+build/*
+dist/*
+*.egg-info/*
 mptt/
 tagging/
 cms.db
 local_settings.py
-*.pyc
 .DS_Store

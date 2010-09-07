@@ -32,6 +32,6 @@ setup(
         'Topic :: Internet :: WWW/HTTP :: Site Management',
     ],
     entry_points={
-        'redsolution_setup': ['pages = pages.redsolution_setup', ],
+        'redsolutioncms': ['pages = pages.redsolution_setup', ],
     }
 )

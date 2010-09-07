@@ -105,3 +105,6 @@ class Make(BaseMake):
 
         if 'redsolutioncms.django-menu-proxy' in cms_settings.installed_packages:
             cms_settings.render_to('settings.py', 'pages/redsolutioncms/settings_menu.pyt')
+
+make = Make()
+
