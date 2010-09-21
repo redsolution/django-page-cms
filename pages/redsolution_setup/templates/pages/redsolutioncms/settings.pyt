@@ -1,4 +1,4 @@
-# django-page-cms
+# ------------  django-page-cms ----------------
 
 INSTALLED_APPS += [
     'tagging',
@@ -9,11 +9,10 @@ INSTALLED_APPS += [
 ]
 
 MIDDLEWARE_CLASSES += [
-    'django.middleware.doc.XViewMiddleware',
     'django.middleware.locale.LocaleMiddleware',
 ]
 
-TEMPLATE_CONTEXT_PROCESSORS += ('pages.context_processors.media',)
+TEMPLATE_CONTEXT_PROCESSORS += ['pages.context_processors.media',]
 DEFAULT_PAGE_TEMPLATE = 'pages/index.html'
 
 # Hardcoded settings, they should  be customizable 
@@ -48,4 +47,18 @@ PAGE_SANITIZE_USER_INPUT = True
 {% endif %}
 {% else %}
 PAGE_SANITIZE_USER_INPUT = False
+{% endif %}
+
+{% if 'redsolutioncms.django-server-config' in cms_settings.installed_packages %}
+try:
+    CONFIG_APP_MEDIA['pages'] = [
+        ('pages', 'pages',),
+    
+    }
+except NameError:
+    CONFIG_APP_MEDIA = {
+        'pages': [
+            ('pages', 'pages',),
+        ],
+    }
 {% endif %}
