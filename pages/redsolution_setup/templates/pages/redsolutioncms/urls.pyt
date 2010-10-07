@@ -1,8 +1,8 @@
-# Django-page-cms urls
+# --- django-page-cms urls ---
 
 urlpatterns += patterns('',
-    (r'^pages', include('pages.urls')),
-    {% if pages_settings.handle_frontpage %}
+    (r'^pages/', include('pages.urls')),
+{% if cms_settings.frontpage_handler.module == 'pages.redsolution_setup' %}
     url(r'^$', 'pages.views.details', name='site-root'),
-    {% endif %}
+{% endif %}
 )

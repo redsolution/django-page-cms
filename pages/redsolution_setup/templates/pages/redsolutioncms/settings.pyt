@@ -1,10 +1,6 @@
-# ------------  django-page-cms ----------------
+# ---- django-page-cms ----
 
 INSTALLED_APPS += [
-    'tagging',
-    {% if 'redsolutioncms.django-tinymce' in cms_settings.installed_packages %}
-    'tinymce',
-    {% endif %}
     'pages',
 ]
 
@@ -51,14 +47,9 @@ PAGE_SANITIZE_USER_INPUT = False
 
 {% if 'redsolutioncms.django-server-config' in cms_settings.installed_packages %}
 try:
-    CONFIG_APP_MEDIA['pages'] = [
-        ('pages', 'pages',),
-    
-    }
+    CONFIG_APP_MEDIA
 except NameError:
-    CONFIG_APP_MEDIA = {
-        'pages': [
-            ('pages', 'pages',),
-        ],
-    }
+    CONFIG_APP_MEDIA = {}
+
+CONFIG_APP_MEDIA['pages'] = [('pages', 'pages',)]
 {% endif %}
