@@ -3,7 +3,6 @@ from setuptools import setup, find_packages
 
 setup(
     name='redsolutioncms.django-page-cms',
-    test_suite="example.test_runner.run_tests",
     version=__import__('pages').__version__,
     description='A tree based Django CMS application, integrated with RedsolutionCMS',
     author='Batiste Bieler',
@@ -13,7 +12,7 @@ setup(
     install_requires=(
         'html5lib>=0.10',
         'django-tagging>0.2.1',
-        'django-mptt-2>0.2.1',
+        'redsolutioncms.django-mptt-2>0.2.1',
     ),
     packages=find_packages(exclude=['example', 'example.*']),
     include_package_data=True, # include package data under svn source control
