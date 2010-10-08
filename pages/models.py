@@ -188,10 +188,15 @@ class Page(models.Model):
 
         :param language: the wanted url language.
         """
-        url = reverse('pages-root')
-        if settings.PAGE_USE_LANGUAGE_PREFIX:
-            url += str(language) + '/'
-        return url + self.get_url(language)
+        url = self.get_url(language)
+        if url == '':
+            return reverse('pages-root')
+        else:
+            if settings.PAGE_USE_LANGUAGE_PREFIX:
+                return reverse('pages-details-by-path',
+                    kwargs={'path': url, 'lang': language})
+            else:
+                return reverse('pages-details-by-path', kwargs={'path': url})
 
     def get_url(self, language=None):
         """Return url of this page, adding all parent's slug."""
