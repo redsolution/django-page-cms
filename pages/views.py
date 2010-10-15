@@ -5,7 +5,7 @@ from pages.models import Page, PageAlias
 from pages.http import auto_render, get_language_from_request
 from pages.http import get_slug_and_relative_path
 from pages.urlconf_registry import get_urlconf
-from django.core.urlresolvers import resolve
+from django.core.urlresolvers import resolve, reverse
 from django.utils import translation
 
 
@@ -76,6 +76,9 @@ class Details(object):
         path = context['path']
         lang = context['lang']
         pages_navigation = context['pages_navigation']
+        if settings.HIDE_ROOT_SLUG:
+            if path == reverse('pages-root') and pages_navigation:
+                return Page.objects.root()[0]
         if path:
             return Page.objects.from_path(path, lang,
                 exclude_drafts=(not is_staff))
