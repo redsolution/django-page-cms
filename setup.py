@@ -1,5 +1,13 @@
 # -*- coding: utf-8 -*-
 from setuptools import setup, find_packages
+import pages
+package_name = 'django-page-cms'
+
+def local_open(fname):
+    return open(os.path.join(os.path.dirname(__file__), fname))
+
+url_schema = 'http://pypi.python.org/packages/source/d/%s/%s-%s.tar.gz'
+download_url = url_schema % (package_name, package_name, pages.__version__)
 
 setup(
     name='redsolutioncms.django-page-cms',
@@ -12,10 +20,13 @@ setup(
     install_requires=(
         'html5lib>=0.10',
         'django-tagging>0.2.1',
-        'redsolutioncms.django-mptt-2>0.2.1',
+        'django-mptt>=0.4.1',
+        'BeautifulSoup',
     ),
     packages=find_packages(exclude=['example', 'example.*']),
     include_package_data=True, # include package data under svn source control
+    download_url=download_url,
+    long_description=local_open('README.rst').read(),
     zip_safe=False,
     classifiers=[
         'Development Status :: 5 - Production/Stable',

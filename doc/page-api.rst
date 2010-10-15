@@ -2,6 +2,74 @@
 Page CMS reference API
 ======================
 
+.. contents::
+    :local:
+    :depth: 1
+
+The application model
+======================
+
+Django page CMS declare rather simple models: :class:`Page <pages.models.Page>`
+:class:`Content <pages.models.Content>` and :class:`PageAlias <pages.models.PageAlias>`.
+
+Those Django models have the following relations:
+
+.. aafig::
+    :aspect: 60
+    :scale: 150
+    :proportional:
+
+              +------------+
+              |PageAlias   |
+              +-----+------+
+                    |
+                foreign key
+                    |
+                +---v---+
+        +------>+ Page  +
+        |       +---+---+
+        |           |
+        |          use
+        |           |
+        |     +-----v-----+       +-------+---------------+
+        |     | Template 1+------>+ Placeholder Node title|
+        |     +-----+-----+       +-------+---------------+
+        |           |
+     foreign key  contains
+        |           |
+        |   +-------v--------------+
+        |   | Placeholder Node body|
+        |   +-------+--------------+
+        |           |
+        |           |
+        |  +--------+--------+-------------+
+        |  |                 |             |
+      +-+--v------+    +-----v-----+       v
+      | Content   |    | Content   |     SSSSS
+      | english   |    | french    |     SSSSS
+      +-----------+    +-----------+
+
+
+Placeholders
+============
+
+.. automodule:: pages.placeholders
+    :members:
+    :undoc-members:
+
+Template tags
+=============
+
+.. automodule:: pages.templatetags.pages_tags
+    :members:
+
+Widgets
+=======
+
+.. automodule:: pages.widgets
+    :members:
+    :undoc-members:
+
 Page Model
 ==========
 
@@ -14,6 +82,12 @@ Page Manager
 .. autoclass:: pages.managers.PageManager
     :members:
     :undoc-members:
+
+Page view
+==========
+
+.. autoclass:: pages.views.Details
+    :members:
 
 Content Model
 =============
@@ -43,33 +117,6 @@ PageAlias Manager
     :members:
     :undoc-members:
 
-PagePermission Model
-====================
-
-.. autoclass:: pages.models.PagePermission
-    :members:
-    :undoc-members:
-
-PagePermission Manager
-======================
-
-.. autoclass:: pages.managers.PagePermissionManager
-    :members:
-    :undoc-members:
-
-Template tags
-=============
-
-.. automodule:: pages.templatetags.pages_tags
-    :members:
-
-Widgets
-=======
-
-.. automodule:: pages.admin.widgets
-    :members:
-    :undoc-members:
-
 Utils
 =====
 
@@ -81,5 +128,12 @@ Http
 ====
 
 .. automodule:: pages.http
+    :members:
+    :undoc-members:
+
+Admin views
+===========
+
+.. automodule:: pages.admin.views
     :members:
     :undoc-members:

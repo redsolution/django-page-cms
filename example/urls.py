@@ -1,20 +1,27 @@
-from django.conf.urls.defaults import *
+import authority
+
+from django.conf.urls.defaults import url, include, patterns
+from django.conf.urls.defaults import handler404, handler500
 from django.contrib import admin
-from django.conf import settings
+
+from pages.views import details
 
 admin.autodiscover()
+authority.autodiscover()
 
 urlpatterns = patterns('',
+    (r'^authority/', include('authority.urls')),
     (r'^i18n/', include('django.conf.urls.i18n')),
-    (r'^pages/', include('pages.urls')),
     (r'^admin/', include(admin.site.urls)),
-    # DEPRECATED. This function is the old way of handling URL
-    #(r'^admin/(.*)', admin.site.root),
+
+    # make tests fail if a backend is not present on the system
+    (r'^search/', include('haystack.urls')),
+    
+    # Trick for Django to support static files
+    # (security hole: only for Dev environement! remove this on Prod!!!)
+    (r'', include('staticfiles.urls')),
+
+    # this gonna match /admin if someone forget the traling slash
+    (r'^', include('pages.urls')),
 )
 
-if settings.DEBUG:
-    urlpatterns += patterns('',
-        # Trick for Django to support static files (security hole: only for Dev environement! remove this on Prod!!!)
-        url(r'^media/(?P<path>.*)$', 'django.views.static.serve', {'document_root': settings.MEDIA_ROOT}),
-        url(r'^admin_media/(?P<path>.*)$', 'django.views.static.serve', {'document_root': settings.ADMIN_MEDIA_ROOT}),
-    )

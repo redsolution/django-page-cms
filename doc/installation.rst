@@ -8,47 +8,62 @@ This document assume that you already know how to setup a Django project.
 If you have any problem installing this CMS, take a look at the example application that stands in the example directory.
 This application works out of the box and will certainly help you to get started.
 
-Step by step installation
-=========================
+.. contents::
+    :local:
+    :depth: 1
 
-For a step by step installation there is `a complete OpenOffice
-document <http://django-page-cms.googlegroups.com/web/gpc-install-instructions.odt>`_. 
+Evaluate quickly the application
+=================================
 
-Install by using pip
-====================
+After you have installed all the dependencies you can simply checkout the code with git::
+
+    git clone git://github.com/batiste/django-page-cms.git django-page-cms
+
+And then, run the example project::
+
+    cd django-page-cms/example/
+    python manage.py syncdb
+    python manage.py build_static pages
+    python manage.py runserver
+
+Then visit http://127.0.0.1:8000/admin/ and create a few pages.
+
+
+Install dependencies by using pip
+==================================
 
 The pip install is the easiest and the recommended installation method. Use::
 
-    sudo easy_install pip
-    wget -c http://django-page-cms.googlecode.com/svn/trunk/requirements/external_apps.txt
-    sudo pip install -r external_apps.txt
+    $ sudo easy_install pip
+    $ wget -c http://github.com/batiste/django-page-cms/raw/master/requirements/external_apps.txt
+    $ sudo pip install -r external_apps.txt
 
 Every package listed in the ``external_app.txt`` should be downloaded and installed.
 
-Install by using easy_install
-=============================
+If you are not using the source code version of the application then install it using::
+
+    $ sudo pip install django-page-cms
+
+Install dependencies by using easy_install
+==========================================
 
 On debian linux you can do::
 
-    sudo easy_install django
-    sudo easy_install html5lib
-    sudo easy_install django-page-cms
+    $ sudo easy_install html5lib BeautifulSoup django django-staticfiles django-authority
 
-* Tagging must be installed by hand or with subversion because the available package is not
-  compatible with django 1.0.
+Optionnaly::
+    
+    $ sudo easy_install django-haystack
 
-* Django-mptt must be installed by hand or with subversion because the available package is not compatible with django 1.0.
+If you are not using the source code version of the application then install it using::
 
-Install by using subversion externals
-=====================================
+    $ sudo easy_install django-page-cms
 
-You can also use the trunk version of the Django Page CMS by using subversion externals::
+.. note::
 
+    Django-Tagging and Django-mptt maybe required to be installed by hand or with subversion
+    because the available packages are not compatible with django 1.0.
 
-    $ svn pe svn:externals .
-    pages                   http://django-page-cms.googlecode.com/svn/trunk/pages
-    mptt                    http://django-mptt.googlecode.com/svn/trunk/mptt
-    tagging                 http://django-tagging.googlecode.com/svn/trunk/tagging
 
 Urls
 ====
@@ -79,38 +94,50 @@ Settings
 
 All the Django page CMS specific settings and options are listed and explained in the ``pages/settings.py`` file.
 
-Django page CMS require several of these settings to be set. They are marked in this document with a bold "*must*". 
+Django page CMS require several of these settings to be set. They are marked in this document with a bold "*must*".
 
-Tagging
--------
+.. note::
 
-Tagging is optional and disabled by default. 
+    If you want a complete list of the available settings for this CMS visit
+    :doc:`the list of all available settings </settings-list>`.
 
-If you want to use it set ``PAGE_TAGGING`` at ``True`` into your setting file and add it to your installed apps::
+Default template
+----------------
 
-    INSTALLED_APPS = (
-        'django.contrib.auth',
-        'django.contrib.contenttypes',
-        'django.contrib.sessions',
-        'django.contrib.admin',
-        'django.contrib.sites',
-        'mptt',
-        'tagging',
-        'pages',
-        ...
+You *must* set ``PAGE_DEFAULT_TEMPLATE`` to the path of your default CMS template::
+
+    PAGE_DEFAULT_TEMPLATE = 'pages/index.html'
+
+This template must exist somewhere in your project. If you want you can copy the example templates
+from the directory ``pages/templates/pages/examples/`` into the directory ``page`` of your root template directory.
+
+Additional templates
+--------------------
+
+Optionally you can set ``PAGE_TEMPLATES`` if you want additional templates choices.
+In the the example application you have actually this::
+
+    PAGE_TEMPLATES = (
+        ('pages/nice.html', 'nice one'),
+        ('pages/cool.html', 'cool one'),
     )
 
-Caching
--------
+Media directory
+---------------
 
-Django page CMS use the caching framework quite intensively. You should definitely
-setting-up a cache-backend_ to have decent performance.
+The django CMS come with some javascript and CSS files.
+These files are standing in the ``pages/media/pages`` directory.
 
-.. _cache-backend: http://docs.djangoproject.com/en/dev/topics/cache/#setting-up-the-cache
+To make these files accessible to your project you can simply copy them  or make a symbolic link into
+your media directory. That's necessary to have a fully functioning administration interface.
 
-If you cannot setup memcache or a database cache, you can use the local memory cache this way::
+You can also look at how the example project is working to make a local setup. It use the very good
+`django-staticfiles <http://pypi.python.org/pypi/django-staticfiles/>`_ application that can gather the media
+files for you. After installation in your project just run::
 
-    CACHE_BACKEND = "locmem:///?max_entries=5000"
+    $ python manage.py build_static pages
+
+And the cms media files will be copied in your project's media directory.
 
 Languages
 ---------
@@ -121,12 +148,10 @@ Please first read how django handle languages
 * http://docs.djangoproject.com/en/dev/ref/settings/#language-code
 
 This CMS use the ``PAGE_LANGUAGES`` setting in order to present which language are supported by the CMS.
-By default ``PAGE_LANGUAGES`` value is set to ``settings.LANGUAGES`` value.
-So you can directly set the ``LANGUAGES`` setting if you want.
-In any case *you should set* ``PAGE_LANGUAGES`` or ``LANGUAGES``
-yourself because by default the ``LANGUAGES`` list is big.
 
-Django use ``LANGUAGES`` setting to set the ``request.LANGUAGE_CODE`` value that is used by this CMS. So if the language you want to support is not present in the ``LANGUAGES`` setting the ``request.LANGUAGE_CODE`` will not be set correctly.
+Django itself use the ``LANGUAGES`` setting to set the ``request.LANGUAGE_CODE`` value that is used by this CMS.
+So if the language you want to support is not present in the ``LANGUAGES``
+setting the ``request.LANGUAGE_CODE`` will not be set correctly.
 
 A possible solution is to redefine ``settings.LANGUAGES``. For example you can do::
 
@@ -148,10 +173,7 @@ A possible solution is to redefine ``settings.LANGUAGES``. For example you can d
     # copy PAGE_LANGUAGES
     languages = list(PAGE_LANGUAGES)
     
-    # All language accepted as a valid client language
-    languages.append(('fr-fr', gettext_noop('French')))
-    languages.append(('fr-be', gettext_noop('Belgium french')))
-    # redefine the LANGUAGES setting in order to set request.LANGUAGE_CODE correctly
+    # redefine the LANGUAGES setting in order to be sure to have the correct request.LANGUAGE_CODE
     LANGUAGES = languages
 
 Template context processors and Middlewares
@@ -180,25 +202,17 @@ You *must* have these middleware into your ``MIDDLEWARE_CLASSES`` setting::
         ...
     )
 
-Default template
-----------------
+Caching
+-------
 
-You *must* set ``DEFAULT_PAGE_TEMPLATE`` to the name of your default CMS template::
+Django page CMS use the caching framework quite intensively. You should definitely
+setting-up a cache-backend_ to have decent performance.
 
-    DEFAULT_PAGE_TEMPLATE = 'pages/index.html'
+.. _cache-backend: http://docs.djangoproject.com/en/dev/topics/cache/#setting-up-the-cache
 
-And you *must* copy the directory ``example/templates/pages`` into your root template directory.
+You can easily setup a local memory cache this way::
 
-Additional templates
---------------------
-
-Optionally you can set ``PAGE_TEMPLATES`` if you want additional templates choices.
-In the the example application you have actually this::
-
-    PAGE_TEMPLATES = (
-        ('pages/nice.html', 'nice one'),
-        ('pages/cool.html', 'cool one'),
-    )
+    CACHE_BACKEND = "locmem:///?max_entries=5000"
 
 The sites framework
 -------------------
@@ -211,52 +225,22 @@ with django-page-cms, you *must* define the ``SITE_ID`` and ``PAGE_USE_SITE_ID``
 
 The Site object should have the domain that match your actual domain (ie: 127.0.0.1:8000)
 
-Media directory
----------------
 
-The django CMS come with some javascript and CSS files. These files are standing in the ``pages/media/pages`` directory.
+Tagging
+-------
 
-If you don't know how to serve static files with Django please read :
+Tagging is optional and disabled by default.
 
-http://docs.djangoproject.com/en/dev/howto/static-files/
+If you want to use it set ``PAGE_TAGGING`` at ``True`` into your setting file and add it to your installed apps::
 
- 
-Django CMS has a special setting called ``PAGES_MEDIA_URL`` that enable you to change
-how the browser will ask for these files in the CMS admin. By default the value of ``PAGES_MEDIA_URL`` is set to ::
-
-    PAGES_MEDIA_URL = getattr(settings, 'PAGES_MEDIA_URL', join(settings.MEDIA_URL, 'pages/'))
-
-Or in a simpler way::
-
-
-    PAGES_MEDIA_URL = settings.MEDIA_URL + "pages/"
-
-
-In the CMS admin template you have::
-
-
-    <link rel="stylesheet" type="text/css" href="{{ PAGES_MEDIA_URL }}css/pages.css" />
-    <script type="text/javascript" src="{{ PAGES_MEDIA_URL }}javascript/jquery.js"></script>
-
-
-That will be rendered by default like this if ``MEDIA_URL == '/media/'``::
-
-
-    <link rel="stylesheet" type="text/css" href="/media/pages/css/pages.css" />
-    <script type="text/javascript" src="/media/pages/javascript/jquery.js"></script>
-
-You can off course redefine this variable in your setting file if you are not happy with this default
-
-In any case you must at least create a symbolic link or copy the directory ``pages/media/pages/`` into
-your media directory to have a fully functioning administration interface.
-
-The example application take another approch by directly
-point the ``MEDIA_ROOT`` of the project on the ``page/media`` directory::
-
-    # Absolute path to the directory that holds media.
-    MEDIA_ROOT = os.path.join(PROJECT_DIR, '../pages/media/')
-    ADMIN_MEDIA_ROOT = os.path.join(PROJECT_DIR, '../admin_media/')
-    MEDIA_URL = '/media/'
-    ADMIN_MEDIA_PREFIX = '/admin_media/'
-
-But you certainly want to redefine these variables to your own project media directory.
+    INSTALLED_APPS = (
+        'django.contrib.auth',
+        'django.contrib.contenttypes',
+        'django.contrib.sessions',
+        'django.contrib.admin',
+        'django.contrib.sites',
+        'mptt',
+        'tagging',
+        'pages',
+        ...
+    )
