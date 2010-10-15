@@ -3,7 +3,7 @@
 
 {% load redsolutioncms_tags %}
 {% if pages_settings.validate and pages_settings.validation_backend == 'trustedhtml' %}
-    {% templatetag openblock %} placeholder {{ placholder }} main_content with trustedhtml.widgets.TrustedTinyMCE {% templatetag closeblock %}
+    {% templatetag openblock %} placeholder {{ placholder }} main_content with TrustedTinyMCE {% templatetag closeblock %}
 {% else %}
     {% if 'redsolutioncms.django-tinymce' in cms_settings.installed_packages %}
     {% templatetag openblock %} placeholder {{ placholder }} main_content with TinyMCE {% templatetag closeblock %}

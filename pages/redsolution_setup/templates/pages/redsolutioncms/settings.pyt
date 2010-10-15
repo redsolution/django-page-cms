@@ -8,7 +8,10 @@ MIDDLEWARE_CLASSES += [
     'django.middleware.locale.LocaleMiddleware',
 ]
 
-TEMPLATE_CONTEXT_PROCESSORS += ['pages.context_processors.media',]
+TEMPLATE_CONTEXT_PROCESSORS += [
+    'pages.context_processors.media',
+    'pages.context_processors.pages_navigation',
+]
 DEFAULT_PAGE_TEMPLATE = 'pages/index.html'
 
 # Hardcoded settings, they should  be customizable 
