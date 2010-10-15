@@ -19,6 +19,7 @@ setup(
         'django-tagging>0.2.1',
         'django-mptt>=0.4.1',
         'BeautifulSoup',
+        'django-authority==0.4',
     ),
     packages=find_packages(exclude=['example', 'example.*']),
     include_package_data=True, # include package data under svn source control
