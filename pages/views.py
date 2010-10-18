@@ -76,7 +76,7 @@ class Details(object):
         path = context['path']
         lang = context['lang']
         pages_navigation = context['pages_navigation']
-        if settings.HIDE_ROOT_SLUG:
+        if settings.PAGE_HIDE_ROOT_SLUG:
             if path == reverse('pages-root') and pages_navigation:
                 return Page.objects.root()[0]
         if path:
