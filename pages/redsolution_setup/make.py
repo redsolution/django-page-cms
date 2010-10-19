@@ -75,6 +75,12 @@ class Make(BaseMake):
                 'pages_settings': pages_settings,
                 'template': template,
             }, 'w')
+        # copy initial data fixture
+        cms_settings.copy_file(
+            join(cms_settings.project_dir, 'fixtures', 'initial_data.json'),
+            join(dirname(__file__), 'fixtures', 'project_data', 'initial_data.json'),
+            mode='a',
+        )
 
     def postmake(self):
         super(Make, self).postmake()
