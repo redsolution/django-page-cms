@@ -17,3 +17,9 @@ For more informations about the product:
 
 http://packages.python.org/django-page-cms/
 
+RedsolutionCMS Classifiers:
+---------------------------
+
+`Frontpage handlers`_
+
+.. _`Frontpage handlers`: http://www.redsolutioncms.org/classifiers/frontpage

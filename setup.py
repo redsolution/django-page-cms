@@ -1,15 +1,21 @@
 # -*- coding: utf-8 -*-
 from setuptools import setup, find_packages
 import os
-package_name = 'django-page-cms'
 
-def local_open(fname):
-    return open(os.path.join(os.path.dirname(__file__), fname))
+# Utility function to read the README file.  
+# Used for the long_description.  It's nice, because now 1) we have a top level
+# README file and 2) it's easier to type in the README file than to put a raw
+# string in below ...
+def read(fname):
+    try:
+        return open(os.path.join(os.path.dirname(__file__), fname)).read()
+    except IOError:
+        return ''
 
 setup(
     name='redsolutioncms.django-page-cms',
     version=__import__('pages').__version__,
-    description='A tree based Django CMS application, integrated with RedsolutionCMS',
+    description=read('DESCRIPTION'),
     author='Batiste Bieler',
     author_email='batiste.bieler@gmail.com',
     url='http://code.google.com/p/django-page-cms/',
@@ -23,7 +29,7 @@ setup(
     ),
     packages=find_packages(exclude=['example', 'example.*']),
     include_package_data=True, # include package data under svn source control
-    long_description=local_open('README.rst').read(),
+    long_description=read('README'),
     zip_safe=False,
     classifiers=[
         'Development Status :: 5 - Production/Stable',
@@ -31,7 +37,6 @@ setup(
         'License :: OSI Approved :: BSD License',
         'Framework :: Django',
         'Environment :: Web Environment',
-        'Natural Language :: Russian',
         'Natural Language :: English',
         'Operating System :: OS Independent',
         'Programming Language :: Python',
