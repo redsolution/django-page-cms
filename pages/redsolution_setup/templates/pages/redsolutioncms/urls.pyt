@@ -6,3 +6,15 @@ urlpatterns += patterns('',
     url(r'^$', 'pages.views.details', name='pages-root'),
 {% endif %}
 )
+
+from pages.models import Page
+pages_dict = {
+    'queryset': Page.objects.exclude(status=Page.DRAFT),
+    'date_field': 'last_modification_date',
+}
+try:
+    sitemaps
+except NameError:
+    sitemps = {}
+
+sitemaps['pages'] = GenericSitemap(pages_dict)
