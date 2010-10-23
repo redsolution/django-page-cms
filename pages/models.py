@@ -233,6 +233,13 @@ class Page(MPTTModel):
 
         :param language: the wanted url language.
         """
+        if self.is_first_root():
+            # this is used to allow users to change URL of the root
+            # page. The language prefix is not usable here.
+            try:
+                return reverse('pages-root')
+            except Exception:
+                pass
         url = self.get_complete_slug(language)
         if not language:
             language = settings.PAGE_DEFAULT_LANGUAGE
@@ -243,20 +250,11 @@ class Page(MPTTModel):
             return reverse('pages-details-by-path', args=[url])
 
     def get_absolute_url(self, language=None):
-        """Return the absolute page url. Add the language prefix if
-        ``PAGE_USE_LANGUAGE_PREFIX`` setting is set to ``True``.
+        """Alias for `get_url_path`.
 
         :param language: the wanted url language.
         """
-        url = self.get_url(language)
-        if url == '':
-            return reverse('pages-root')
-        else:
-            if settings.PAGE_USE_LANGUAGE_PREFIX:
-                return reverse('pages-details-by-path',
-                    kwargs={'path': url, 'lang': language})
-            else:
-                return reverse('pages-details-by-path', kwargs={'path': url})
+        return self.get_url_path(language=language)
 
     def get_complete_slug(self, language=None):
         """Return the complete slug of this page by concatenating
