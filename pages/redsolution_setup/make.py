@@ -48,6 +48,17 @@ class Make(BaseMake):
             pages_settings.validation_backend = 'trustedhtml'
             pages_settings.save()
 
+        # Integration with django-server-config
+        if 'redsolutioncms.django-server-config' in cms_settings.installed_packages:
+            try:
+                from config.redsolution_setup.models import ConfigSettings
+            except ImportError:
+                pass
+            else:
+                config_settings = ConfigSettings.objects.get_settings()
+                config_settings.appmedia.get_or_create(appname='pages',
+                    source='pages', target='pages')
+
 
     def make(self):
         super(Make, self).make()
