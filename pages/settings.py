@@ -212,5 +212,6 @@ PAGE_EXTRA_CONTEXT = getattr(settings, 'PAGE_EXTRA_CONTEXT', None)
 # placeholder images, is placed.
 PAGE_UPLOAD_ROOT = getattr(settings, 'PAGE_UPLOAD_ROOT', 'upload')
 
-
+#Disable page caching
+PAGE_DISABLE_CACHE = getattr(settings, 'PAGE_DISABLE_CACHE', False)
 

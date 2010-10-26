@@ -205,6 +205,8 @@ class ContentManager(models.Manager):
             page._content_dict = dict()
         if page._content_dict.get(key, None):
             content_dict = page._content_dict.get(key)
+        elif settings.PAGE_DISABLE_CACHE:
+            content_dict = None
         else:
             content_dict = cache.get(key)
 
@@ -230,7 +232,8 @@ class ContentManager(models.Manager):
                 except self.model.DoesNotExist:
                     content_dict[lang] = ''
             page._content_dict[key] = content_dict
-            cache.set(key, content_dict)
+            if not settings.PAGE_DISABLE_CACHE:
+                cache.set(key, content_dict)
 
         if language in content_dict and content_dict[language]:
             return filter_link(content_dict[language], page, language, ctype)

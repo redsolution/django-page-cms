@@ -56,3 +56,9 @@ except NameError:
 
 CONFIG_APP_MEDIA['pages'] = [('pages', 'pages',)]
 {% endif %}
+
+{% if pages_settings.disable_page_cache %}
+PAGE_DISABLE_CACHE = True
+{% else %}
+PAGE_DISABLE_CACHE = False
+{% endif %}

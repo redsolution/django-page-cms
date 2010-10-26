@@ -36,6 +36,7 @@ class PagesSettings(BaseSettings):
         choices=TEMPLATE_TYPES, default=0)
     validate = models.BooleanField(verbose_name=_('Validate html user input'), default=False)
     validation_backend = models.CharField(verbose_name=_('Validation service'), max_length=100, default='html5lib')
+    disable_page_cache = models.BooleanField(verbose_name=_('Disable page caching'), default=False)
 
     # For future
 #    use_tagging = models.BooleanField(verbose_name=_('Use pages tagging'), default=False)
