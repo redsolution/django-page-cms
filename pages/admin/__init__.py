@@ -92,6 +92,7 @@ class PageAdmin(admin.ModelAdmin):
             'javascript/jquery.query.js',
             'javascript/pages.js',
             'javascript/pages_form.js',
+            'javascript/pages_slug.js',
         )]
 
     def urls(self):

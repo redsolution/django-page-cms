@@ -81,6 +81,7 @@ div.sphinxsidebarwrapper{
     padding: 0 0;
 }
 
+ 
 div.sphinxsidebar h3,
 div.sphinxsidebar h4 {
     font-family: Arial, sans-serif;
@@ -142,6 +143,7 @@ a:hover {
     text-decoration: underline;
 }
 
+ 
 div.body h1,
 div.body h2,
 div.body h3,

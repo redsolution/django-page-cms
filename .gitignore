@@ -1,3 +1,12 @@
+.svn
+*.orig
+*.pyc
+.project
+.pydevproject
+.settings
+build/*
+dist/*
+*.egg-info/*
 mptt/
 tagging/
 build/
@@ -7,5 +16,4 @@ example/media/
 django_page_cms.egg-info/
 cms.db
 local_settings.py
-*.pyc
 .DS_Store

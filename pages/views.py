@@ -27,20 +27,12 @@ class Details(object):
 
         current_page = False
 
+        # if the path is not defined, we assume that the user
+        # is using the view in a non usual way and fallback onto the
+        # the full request path.
         if path is None:
-            raise ValueError(
-                "pages.views.Details class view requires the path argument. "
-                "Check your urls.py file.")
+            path = request.path
 
-        # for the ones that might have forgotten to pass the language
-        # the language is now removed from the page path
-        if settings.PAGE_USE_LANGUAGE_PREFIX and lang is None:
-            maybe_lang = path.split("/")[0]
-            if maybe_lang in LANGUAGE_KEYS:
-                lang = maybe_lang
-                path = path[(len(lang) + 1):]
-
-        lang = self.choose_language(lang, request)
         pages_navigation = self.get_navigation(request, path, lang)
 
         context = {
@@ -72,12 +64,14 @@ class Details(object):
 
         template_name = self.get_template(request, context)
 
+        if request.is_ajax():
+            template_name = "body_%s" % template_name
+
         self.extra_context(request, context)
 
-        if delegation and current_page.delegate_to:
-            answer = self.delegate(request, context, delegation, **kwargs)
-            if answer:
-                return answer
+        answer = self.delegate(request, context, delegation)
+        if answer:
+            return answer
 
         # do what the auto_render was used to do.
         if kwargs.get('only_context', False):

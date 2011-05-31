@@ -1,0 +1,36 @@
+{% load redsolutioncms_tags %}
+{% raw %}
+    {% extends 'pages/base.html' %}
+    {% load pages_tags %}
+{% endraw %}
+
+{% raw %}
+{% block content %}
+{% endraw %}
+
+{% if template.type == 0 %} {# one column #}
+    <div class="one-column">
+    {% with 'main_content' as placeholder %}
+    {% include "pages/redsolutioncms/placeholder_include.html" %}
+    {% endwith %}
+    </div>
+{% endif %}
+
+{% if template.type == 1 %} {# two columns #}
+    <div class="two-columns">
+    <div class="col1">
+    {% with 'main_content' as placeholder %}
+    {% include "pages/redsolutioncms/placeholder_include.html" %}
+    {% endwith %}
+    </div>
+    <div class="col2">
+    {% with 'right_content' as placeholder %}
+    {% include "pages/redsolutioncms/placeholder_include.html" %}
+    {% endwith %}
+    </div>
+    </div>
+{% endif %}
+
+{% raw %}
+{% endblock %}
+{% endraw %}

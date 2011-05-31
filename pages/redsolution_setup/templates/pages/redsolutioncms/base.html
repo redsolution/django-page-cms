@@ -1,0 +1,31 @@
+{% load redsolutioncms_tags %}{% raw %}
+{% extends "base.html" %}
+{% load i18n pages_tags %}
+
+{# title on page, H1 for example #}
+{% block content_title %}
+    {% get_content current_page "long_title" as long_title %}
+    {% if long_title %}
+        {% placeholder long_title with TextInput %}
+    {% else %}
+        {% placeholder title %}
+    {% endif %}
+{% endblock %}
+{% endraw %}
+
+{% if 'redsolutioncms.django-seo' in cms_settings.installed_packages %}
+{% raw %}
+{% load seo_tags %}
+{% block keywords %}{% seo keywords for current_page %}{% endblock %}
+{% block description %}{% seo description for current_page %}{% endblock %}" 
+{% block title %}{% seo title for current_page as title %}{% if title %}{{ title }}{% else %}{% placeholder title %}{% endif %}{% endblock %}
+{% endraw %}
+{% endif %}
+
+{% if 'redsolutioncms.django-menu-proxy' in cms_settings.installed_packages %}
+{% raw %}
+{% load menuproxy_tags %}
+{% block breadcrumbs %}{% show_breadcrumbs 'pages' current_page %}{% endblock %}
+{% block menu %}{% show_auto_menu 'pages' current_page %}{% endblock %}
+{% endraw %}
+{% endif %}

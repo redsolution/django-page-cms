@@ -19,3 +19,12 @@ For more informations about the product:
 
 http://packages.python.org/django-page-cms/
 
+<<<<<<< HEAD
+=======
+RedsolutionCMS Classifiers:
+---------------------------
+
+`Frontpage handlers`_
+
+.. _`Frontpage handlers`: http://www.redsolutioncms.org/classifiers/frontpage
+>>>>>>> merging

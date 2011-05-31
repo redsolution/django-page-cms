@@ -55,6 +55,9 @@ setup(
         'Environment :: Web Environment',
         'Intended Audience :: Developers',
         'License :: OSI Approved :: BSD License',
+        'Framework :: Django',
+        'Environment :: Web Environment',
+        'Natural Language :: English',
         'Operating System :: OS Independent',
         'Programming Language :: Python',
         'Framework :: Django',
@@ -62,4 +65,7 @@ setup(
         'Programming Language :: JavaScript',
         'Topic :: Internet :: WWW/HTTP :: Site Management',
     ],
+    entry_points={
+        'redsolutioncms': ['pages = pages.redsolution_setup', ],
+    }
 )
