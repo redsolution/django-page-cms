@@ -66,11 +66,7 @@ TEMPLATE_CONTEXT_PROCESSORS = (
     "django.core.context_processors.request",
     "django.core.context_processors.media",
     "pages.context_processors.media",
-<<<<<<< HEAD
     'django.core.context_processors.static',
-=======
-    #"staticfiles.context_processors.static_url",
->>>>>>> merging
 )
 
 INTERNAL_IPS = ('127.0.0.1',)
@@ -161,10 +157,6 @@ def language_mapping(lang):
 PAGE_LANGUAGE_MAPPING = language_mapping
 
 PAGE_DEFAULT_TEMPLATE = 'pages/examples/index.html'
-<<<<<<< HEAD
-
-=======
->>>>>>> merging
 
 PAGE_TEMPLATES = (
     ('pages/examples/nice.html', 'nice one'),
@@ -181,11 +173,8 @@ HAYSTACK_SITECONF = 'example.search_sites'
 HAYSTACK_SEARCH_ENGINE = 'whoosh'
 HAYSTACK_WHOOSH_PATH = os.path.join(PROJECT_DIR, 'whoosh_index')
 
-<<<<<<< HEAD
 PAGE_REAL_TIME_SEARCH = False
 
-=======
->>>>>>> merging
 COVERAGE_EXCLUDE_MODULES = (
     "pages.migrations.*",
     "pages.tests.*",

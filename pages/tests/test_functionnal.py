@@ -193,10 +193,6 @@ class FunctionnalTestCase(TestCase):
 
         setattr(pages_settings, "SITE_ID", 1)
 
-<<<<<<< HEAD
-
-=======
->>>>>>> merging
     def test_languages(self):
         """Test post a page with different languages
         and test that the admin views works correctly."""
@@ -264,10 +260,6 @@ class FunctionnalTestCase(TestCase):
         self.assertContains(response, 'french title')
         self.assertContains(response, 'lang="fr-ch"')
 
-<<<<<<< HEAD
-
-=======
->>>>>>> merging
     def test_revision(self):
         """Test that a page can edited several times."""
         c = self.get_admin_client()
@@ -295,10 +287,7 @@ class FunctionnalTestCase(TestCase):
         self.assertEqual(Content.objects.get_content(page, 'en-us', 'body'),
             'changed body 2')
 
-<<<<<<< HEAD
 
-=======
->>>>>>> merging
     def test_placeholder(self):
         """
         Test that the placeholder is correctly displayed in
@@ -315,10 +304,7 @@ class FunctionnalTestCase(TestCase):
 
         self.assertContains(response, 'name="right-column"', 1)
 
-<<<<<<< HEAD
 
-=======
->>>>>>> merging
     def test_directory_slug(self):
         """
         Test diretory slugs
@@ -387,11 +373,7 @@ class FunctionnalTestCase(TestCase):
         response = c.get(url)
         self.assertEqual(response.status_code, 200)
 
-<<<<<<< HEAD
         url = '/admin/pages/page/%d/get-content/slug/' % page.id
-=======
-        url = '/admin/pages/page/%d/get-content/1/' % page.id
->>>>>>> merging
         response = c.get(url)
         self.assertEqual(response.status_code, 200)
 
@@ -399,10 +381,8 @@ class FunctionnalTestCase(TestCase):
         response = c.get(url)
         self.assertEqual(response.status_code, 302)
 
-<<<<<<< HEAD
 
-=======
->>>>>>> merging
+
     def test_page_alias(self):
         """Test page aliasing system"""
 
@@ -446,10 +426,8 @@ class FunctionnalTestCase(TestCase):
         self.assertRedirects(response,
             self.get_page_url('downloads-page'), 301)
 
-<<<<<<< HEAD
 
-=======
->>>>>>> merging
+
     def test_page_redirect_to(self):
         """Test page redirected to an other page."""
 
@@ -466,10 +444,8 @@ class FunctionnalTestCase(TestCase):
         response = client.get(page1.get_url_path())
         self.assertRedirects(response, page2.get_url_path(), 301)
 
-<<<<<<< HEAD
 
-=======
->>>>>>> merging
+
     def test_page_valid_targets(self):
         """Test page valid_targets method"""
         c = self.get_admin_client()
@@ -564,12 +540,7 @@ class FunctionnalTestCase(TestCase):
         from pages.views import details
         from pages.utils import get_request_mock
         request = get_request_mock()
-<<<<<<< HEAD
         context = details(request, path='/page1/', only_context=True)
-=======
-        request.path = page1.get_url_path()
-        context = details(request, only_context=True)
->>>>>>> merging
         self.assertEqual(context['current_page'], page1)
 
 
@@ -578,10 +549,8 @@ class FunctionnalTestCase(TestCase):
         request = get_request_mock()
         self.assertEqual(hasattr(request, 'session'), True)
 
-<<<<<<< HEAD
 
-=======
->>>>>>> merging
+
     def test_tree_admin_interface(self):
         """
         Test that moving/creating page in the tree is working properly
@@ -663,10 +632,8 @@ class FunctionnalTestCase(TestCase):
         response = c.post('/admin/pages/page/%d/' % child_2.id, page_data)
         self.assertEqual(response.status_code, 200)
 
-<<<<<<< HEAD
 
-=======
->>>>>>> merging
+
     def test_tree(self):
         """
         Test that the navigation tree works properly with mptt.
@@ -731,10 +698,8 @@ class FunctionnalTestCase(TestCase):
         self.assertTrue(response.status_code == 301)
         self.assertTrue(response['Location'] == url)
 
-<<<<<<< HEAD
 
-=======
->>>>>>> merging
+
     def test_page_freeze_date(self):
         """Test page freezing feature."""
         c = self.get_admin_client()
