@@ -36,7 +36,7 @@ the **widget** option
 If the **widget** option is used to change the way the CMS administration interface.
 
 By default the CMS will use a simple `TextInput` widget. Otherwise the CMS will use the
-widget fo your choice. Widgets need to be registered before you can use them in the CMS::
+widget of your choice. Widgets need to be registered before you can use them in the CMS::
 
     from pages.widgets_registry import register_widget
     from django.forms import TextInput
@@ -116,7 +116,7 @@ This is a list of different possible syntaxes for this template tag::
 Image placeholder
 =================
 
-You can also use a special placeholder for images::
+There is a special placeholder for images::
 
     {% imageplaceholder body-image as imgsrc %}
     {% if imgsrc %}
@@ -124,6 +124,30 @@ You can also use a special placeholder for images::
     {% endif %}
 
 A file upload field will appears into the page admin interface.
+
+
+File placeholder
+================
+
+There is also a more general placeholder for files::
+
+    {% fileplaceholder uploaded_file as filesrc %}
+    {% if filesrc %}
+        <a href="{{ MEDIA_URL }}{{ filesrc }}">Download file</a>
+    {% endif %}
+
+A file upload field will appears into the page admin interface.
+
+
+Contact placeholder
+===================
+
+If you want to include a simple contact form in your page, there is a contact placeholder::
+
+    {% contactplaceholder contact %}
+
+This placeholder use ´settings.ADMINS´ for recipients email. The template used to render
+the contact form is ´pages/contact.html´.
 
 
 Create your own placeholder
@@ -162,7 +186,7 @@ you can simply subclass the :class:`PlaceholderNode <pages.placeholders.Placehol
         return ContactFormPlaceholderNode(name, **params)
     register.tag('contactplaceholder', do_contactplaceholder)
 
-And use it your templates as a normal placeholder in your templates::
+And use it in your templates as a normal placeholder::
 
     {% contactplaceholder contact %}
 

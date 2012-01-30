@@ -10,6 +10,7 @@ from django.core.urlresolvers import resolve, Resolver404
 from django.utils import translation
 from django.shortcuts import render_to_response
 from django.template import RequestContext
+from django.core.xheaders import populate_xheaders
 
 LANGUAGE_KEYS = [key for (key, value) in settings.PAGE_LANGUAGES]
 
@@ -77,9 +78,11 @@ class Details(object):
         if kwargs.get('only_context', False):
             return context
         template_name = kwargs.get('template_name', template_name)
-
-        return render_to_response(template_name,
+        response = render_to_response(template_name,
             RequestContext(request, context))
+        current_page = context['current_page']
+        populate_xheaders(request, response, Page, current_page.id)
+        return response
 
     def resolve_page(self, request, context, is_staff):
         """Return the appropriate page according to the path."""
@@ -162,7 +165,8 @@ class Details(object):
         # call this view instead.
         current_page = context['current_page']
         path = context['path']
-        delegate_path = path.replace(current_page.get_complete_slug(), "")
+        delegate_path = path.replace(
+            current_page.get_complete_slug(hideroot=False), "")
         # it seems that the urlconf path have to start with a slash
         if len(delegate_path) == 0:
             delegate_path = "/"

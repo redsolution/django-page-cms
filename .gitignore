@@ -17,3 +17,4 @@ django_page_cms.egg-info/
 cms.db
 local_settings.py
 .DS_Store
+.idea

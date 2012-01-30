@@ -3,12 +3,14 @@
 from pages.widgets_registry import get_widget
 from pages import settings
 from pages.models import Content
-from pages.widgets import ImageInput, VideoWidget
+from pages.widgets import ImageInput, VideoWidget, FileInput
 
+from django import forms
+from django.core.mail import send_mail
 from django import template
 from django.template import TemplateSyntaxError
 from django.core.files.storage import default_storage
-from django.forms import Textarea, ImageField, CharField
+from django.forms import Textarea, ImageField, CharField, FileField
 from django.forms import TextInput
 from django.conf import settings as global_settings
 from django.utils.translation import ugettext_lazy as _
@@ -276,6 +278,87 @@ class ImagePlaceholderNode(PlaceholderNode):
                 filename,
                 change
             )
+
+class FilePlaceholderNode(PlaceholderNode):
+    """A `PlaceholderNode` that saves one file on disk.
+
+    `PAGE_UPLOAD_ROOT` setting define where to save the file.
+    """
+
+    def get_field(self, page, language, initial=None):
+        help_text = ""
+        widget = FileInput(page, language)
+        return FileField(
+            widget=widget,
+            initial=initial,
+            help_text=help_text,
+            required=False
+        )
+
+    def save(self, page, language, data, change, extra_data=None):
+        if 'delete' in extra_data:
+            return super(FilePlaceholderNode, self).save(
+                page,
+                language,
+                "",
+                change
+            )
+        filename = ''
+        if change and data:
+            # the image URL is posted if not changed
+            if type(data) is unicode:
+                return
+            filename = os.path.join(
+                settings.PAGE_UPLOAD_ROOT,
+                'page_' + str(page.id),
+                self.name + '-' + str(time.time())
+            )
+
+            m = re.search('\.[a-zA-Z]{1,4}$', str(data))
+            if m is not None:
+                filename += m.group(0).lower()
+
+            filename = default_storage.save(filename, data)
+            return super(FilePlaceholderNode, self).save(
+                page,
+                language,
+                filename,
+                change
+            )
+
+
+class ContactForm(forms.Form):
+  
+    email = forms.EmailField(label=_('Your email'))
+    subject = forms.CharField(label=_('Subject'), 
+      max_length=150)
+    message = forms.CharField(widget=forms.Textarea(),
+      label=_('Your message'))
+    
+
+class ContactPlaceholderNode(PlaceholderNode):
+    """A contact `PlaceholderNode` example."""
+
+    def render(self, context):
+        content = self.get_content_from_context(context)
+        request = context.get('request', None)
+        if not request:
+            raise ValueError('request no available in the context.')
+        if request.method == 'POST':
+            form = ContactForm(request.POST)
+            if form.is_valid():
+                data = form.cleaned_data
+                recipients = [adm[1] for adm in global_settings.ADMINS]
+                try:
+                    send_mail(data['subject'], data['message'], 
+                        data['email'], recipients, fail_silently=False)
+                    return _("Your email has been sent. Thank you.")
+                except:
+                    return _("An error as occured: your email has not been sent.")
+        else:
+            form = ContactForm()
+        renderer = render_to_string('pages/contact.html', {'form':form})
+        return mark_safe(renderer)
 
 
 class VideoPlaceholderNode(PlaceholderNode):
