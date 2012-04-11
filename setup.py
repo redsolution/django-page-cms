@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 from setuptools import setup, find_packages
 import pages
-package_name = 'django-page-cms'
+package_name = 'redsolutioncms.django-page-cms'
 
 def local_open(fname):
     return open(os.path.join(os.path.dirname(__file__), fname))
