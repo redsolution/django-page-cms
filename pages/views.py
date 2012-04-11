@@ -60,9 +60,6 @@ class Details(object):
 
         template_name = self.get_template(request, context)
 
-        if request.is_ajax():
-            template_name = "body_%s" % template_name
-
         self.extra_context(request, context)
 
         answer = self.delegate(request, context, delegation)
