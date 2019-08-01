@@ -15,55 +15,31 @@ This application works out of the box and will certainly help you to get started
 Evaluate quickly the application
 =================================
 
-After you have installed all the dependencies you can simply checkout the code with git::
+Copy and paste this command in your virtual environnement and you should get a running cms instance::
 
-    git clone git://github.com/batiste/django-page-cms.git django-page-cms
+    $ pip install django-page-cms[full]; gerbi --create mywebsite
 
-And then, run the example project::
-
-    cd django-page-cms/example/
-    python manage.py syncdb
-    python manage.py build_static pages
-    python manage.py runserver
-
-Then visit http://127.0.0.1:8000/admin/ and create a few pages.
-
+Then visit http://127.0.0.1:8000/
 
 Install dependencies by using pip
 ==================================
 
 The pip install is the easiest and the recommended installation method. Use::
 
-    $ sudo easy_install pip
-    $ wget -c http://github.com/batiste/django-page-cms/raw/master/requirements/external_apps.txt
-    $ sudo pip install -r external_apps.txt
+    $ pip install django-page-cms[full]
 
-Every package listed in the ``external_app.txt`` should be downloaded and installed.
 
-If you are not using the source code version of the application then install it using::
+Add django-page-cms into your INSTALLED_APPS
+==================================================
 
-    $ sudo pip install django-page-cms
+To activate django-page-cms you will need to add those application::
 
-Install dependencies by using easy_install
-==========================================
-
-On debian linux you can do::
-
-    $ sudo easy_install html5lib BeautifulSoup django django-staticfiles django-authority
-
-Optionnaly::
-
-    $ sudo easy_install django-haystack
-
-If you are not using the source code version of the application then install it using::
-
-    $ sudo easy_install django-page-cms
-
-.. note::
-
-    Django-Tagging and Django-mptt maybe required to be installed by hand or with subversion
-    because the available packages are not compatible with django 1.0.
-
+    INSTALLED_APPS = (
+        ...
+        'mptt',
+        'pages',
+        ...
+    )
 
 Urls
 ====
@@ -80,14 +56,6 @@ Basically you need to have something like this::
 When you will visit the site the first time (``/pages/``), you will get a 404 error
 because there is no published page. Go to the admin first and create and publish some pages.
 
-You will certainly want to activate the static file serve view in your ``urls.py`` if you are in developement mode::
-
-    if settings.DEBUG:
-        urlpatterns += patterns('',
-            # Trick for Django to support static files (security hole: only for Dev environement! remove this on Prod!!!)
-            url(r'^media/(?P<path>.*)$', 'django.views.static.serve', {'document_root': settings.MEDIA_ROOT}),
-            url(r'^admin_media/(?P<path>.*)$', 'django.views.static.serve', {'document_root': settings.ADMIN_MEDIA_ROOT}),
-        )
 
 Settings
 ========
@@ -126,16 +94,9 @@ Media directory
 ---------------
 
 The django CMS come with some javascript and CSS files.
-These files are standing in the ``pages/media/pages`` directory.
+These files are standing in the ``pages/static/pages`` directory::
 
-To make these files accessible to your project you can simply copy them  or make a symbolic link into
-your media directory. That's necessary to have a fully functioning administration interface.
-
-You can also look at how the example project is working to make a local setup. It use the very good
-`django-staticfiles <http://pypi.python.org/pypi/django-staticfiles/>`_ application that can gather the media
-files for you. After installation in your project just run::
-
-    $ python manage.py build_static pages
+    $ python manage.py collecstatic pages
 
 And the cms media files will be copied in your project's media directory.
 
@@ -179,26 +140,11 @@ A possible solution is to redefine ``settings.LANGUAGES``. For example you can d
 Template context processors and Middlewares
 -------------------------------------------
 
-You *must* have these context processors into your ``TEMPLATE_CONTEXT_PROCESSORS`` setting::
+You *must* have this context processors into your ``TEMPLATE_CONTEXT_PROCESSORS`` setting::
 
     TEMPLATE_CONTEXT_PROCESSORS = (
-        'django.core.context_processors.auth',
-        'django.core.context_processors.i18n',
-        'django.core.context_processors.debug',
-        'django.core.context_processors.media',
-        'django.core.context_processors.request',
-        'pages.context_processors.media',
         ...
-    )
-
-You *must* have these middleware into your ``MIDDLEWARE_CLASSES`` setting::
-
-    MIDDLEWARE_CLASSES = (
-        'django.contrib.sessions.middleware.SessionMiddleware',
-        'django.middleware.common.CommonMiddleware',
-        'django.contrib.auth.middleware.AuthenticationMiddleware',
-        'django.middleware.doc.XViewMiddleware',
-        'django.middleware.locale.LocaleMiddleware',
+        'pages.context_processors.media',
         ...
     )
 
@@ -210,9 +156,23 @@ setting-up a cache-backend_ to have decent performance.
 
 .. _cache-backend: http://docs.djangoproject.com/en/dev/topics/cache/#setting-up-the-cache
 
-You can easily setup a local memory cache this way::
+If you want to setup a specific cache for Gerbi CMS instead of using the default you
+can do it by setting up the 'pages' cache entry::
 
-    CACHE_BACKEND = "locmem:///?max_entries=5000"
+    CACHES = {
+        'default': ...
+        'pages': {
+            'BACKEND': 'django.core.cache.backends.memcached.MemcachedCache',
+            'LOCATION': '127.0.0.1:11211',
+        }
+    }
+
+.. note::
+
+    The cache has been designed with memcache in mind: a single point of truth for cache. The CMS
+    invalidates the cache actively when changes are made. That means that you need a central cache if
+    you run this CMS in serveral processes otherwise the caches will become inconsitent.
+
 
 The sites framework
 -------------------
@@ -234,13 +194,7 @@ Tagging is optional and disabled by default.
 If you want to use it set ``PAGE_TAGGING`` at ``True`` into your setting file and add it to your installed apps::
 
     INSTALLED_APPS = (
-        'django.contrib.auth',
-        'django.contrib.contenttypes',
-        'django.contrib.sessions',
-        'django.contrib.admin',
-        'django.contrib.sites',
-        'mptt',
-        'tagging',
-        'pages',
+        ...
+        'taggit',
         ...
     )

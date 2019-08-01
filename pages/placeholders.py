@@ -1,9 +1,9 @@
 """Placeholder module, that's where the smart things happen."""
-
 from pages.widgets_registry import get_widget
 from pages import settings
-from pages.models import Content
-from pages.widgets import ImageInput, VideoWidget, FileInput
+from pages.models import Content, Media
+from pages.widgets import ImageInput, FileInput
+from pages.utils import slugify
 
 from django import forms
 from django.core.mail import send_mail
@@ -15,11 +15,19 @@ from django.forms import TextInput
 from django.conf import settings as global_settings
 from django.utils.translation import ugettext_lazy as _
 from django.utils.safestring import mark_safe
+from django.utils.text import unescape_string_literal
 from django.template.loader import render_to_string
-
+from django.template import RequestContext
+from django.core.files.uploadedfile import UploadedFile
+import logging
 import os
 import time
-import re
+import six
+import copy
+import uuid
+
+logging.basicConfig()
+logger = logging.getLogger("pages")
 
 PLACEHOLDER_ERROR = _("[Placeholder %(name)s had syntax error: %(error)s]")
 
@@ -28,16 +36,20 @@ def parse_placeholder(parser, token):
     """Parse the `PlaceholderNode` parameters.
 
     Return a tuple with the name and parameters."""
+    params = {}
+
     bits = token.split_contents()
     count = len(bits)
     error_string = '%r tag requires at least one argument' % bits[0]
     if count <= 1:
         raise TemplateSyntaxError(error_string)
-    name = bits[1]
+    try:
+        name = unescape_string_literal(bits[1])
+    except ValueError:
+        name = bits[1]
     remaining = bits[2:]
-    params = {}
-    simple_options = ['parsed', 'inherited', 'untranslated']
-    param_options = ['as', 'on', 'with']
+    simple_options = ['parsed', 'inherited', 'untranslated', 'shared', 'block']
+    param_options = ['as', 'on', 'with', 'section']
     all_options = simple_options + param_options
     while remaining:
         bit = remaining[0]
@@ -47,13 +59,15 @@ def parse_placeholder(parser, token):
         if bit in param_options:
             if len(remaining) < 2:
                 raise TemplateSyntaxError(
-                "Placeholder option '%s' need a parameter" % bit)
+                    "Placeholder option '%s' need a parameter" % bit)
             if bit == 'as':
                 params['as_varname'] = remaining[1]
             if bit == 'with':
                 params['widget'] = remaining[1]
             if bit == 'on':
                 params['page'] = remaining[1]
+            if bit == 'section':
+                params['section'] = unescape_string_literal(remaining[1])
             remaining = remaining[2:]
         elif bit == 'parsed':
             params['parsed'] = True
@@ -64,6 +78,15 @@ def parse_placeholder(parser, token):
         elif bit == 'untranslated':
             params['untranslated'] = True
             remaining = remaining[1:]
+        elif bit == 'shared':
+            params['shared'] = True
+            remaining = remaining[1:]
+        elif bit == 'block':
+            remaining = remaining[1:]
+            nodelist = parser.parse(('endplaceholder',))
+            parser.delete_first_token()
+            params['nodelist'] = nodelist
+
     return name, params
 
 
@@ -90,27 +113,33 @@ class PlaceholderNode(template.Node):
     field = CharField
     widget = TextInput
 
-    def __init__(self, name, page=None, widget=None, parsed=False,
-            as_varname=None, inherited=False, untranslated=False):
+    def __init__(
+            self, name, page=None, widget=None, parsed=False,
+            as_varname=None, inherited=False, untranslated=False,
+            has_revision=True, section=None, shared=False, nodelist=None):
         """Gather parameters for the `PlaceholderNode`.
 
         These values should be thread safe and don't change between calls."""
         self.page = page or 'current_page'
         self.name = name
+        self.ctype = name.replace(" ", "_")
         if widget:
             self.widget = widget
         self.parsed = parsed
         self.inherited = inherited
         self.untranslated = untranslated
         self.as_varname = as_varname
+        self.section = section
+        self.shared = shared
+        self.nodelist = nodelist or [] # should be an iterable
+
         self.found_in_block = None
 
     def get_widget(self, page, language, fallback=Textarea):
         """Given the name of a placeholder return a `Widget` subclass
         like Textarea or TextInput."""
-        is_str = type(self.widget) == type(str())
-        is_unicode = type(self.widget) == type(unicode())
-        if is_str or is_unicode:
+        is_str = isinstance(self.widget, six.string_types)
+        if is_str:
             widget = get_widget(self.widget)
         else:
             widget = self.widget
@@ -126,9 +155,9 @@ class PlaceholderNode(template.Node):
         saved in the admin and passed to the placeholder save
         method."""
         result = {}
-        for key in data.keys():
-            if key.startswith(self.name + '-'):
-                new_key = key.replace(self.name + '-', '')
+        for key in list(data.keys()):
+            if key.startswith(self.ctype + '-'):
+                new_key = key.replace(self.ctype + '-', '')
                 result[new_key] = data[key]
         return result
 
@@ -139,8 +168,9 @@ class PlaceholderNode(template.Node):
         else:
             help_text = ''
         widget = self.get_widget(page, language)
-        return self.field(widget=widget, initial=initial,
-                    help_text=help_text, required=False)
+        return self.field(
+            widget=widget, initial=initial,
+            help_text=help_text, required=False)
 
     def save(self, page, language, data, change, extra_data=None):
         """Actually save the placeholder data into the Content object."""
@@ -149,22 +179,25 @@ class PlaceholderNode(template.Node):
         if self.untranslated:
             language = settings.PAGE_DEFAULT_LANGUAGE
 
+        if self.shared:
+            page = None
+
         # the page is being changed
         if change:
             # we need create a new content if revision is enabled
             if(settings.PAGE_CONTENT_REVISION and self.name
-                not in settings.PAGE_CONTENT_REVISION_EXCLUDE_LIST):
+                    not in settings.PAGE_CONTENT_REVISION_EXCLUDE_LIST):
                 Content.objects.create_content_if_changed(
                     page,
                     language,
-                    self.name,
+                    self.ctype,
                     data
                 )
             else:
                 Content.objects.set_or_create_content(
                     page,
                     language,
-                    self.name,
+                    self.ctype,
                     data
                 )
         # the page is being added
@@ -172,7 +205,7 @@ class PlaceholderNode(template.Node):
             Content.objects.set_or_create_content(
                 page,
                 language,
-                self.name,
+                self.ctype,
                 data
             )
 
@@ -180,51 +213,94 @@ class PlaceholderNode(template.Node):
         if self.untranslated:
             lang = settings.PAGE_DEFAULT_LANGUAGE
             lang_fallback = False
-        content = Content.objects.get_content(page_obj, lang, self.name,
-            lang_fallback)
+        if self.shared:
+            return Content.objects.get_content(
+                None, lang, self.ctype, lang_fallback)
+        content = Content.objects.get_content(
+            page_obj, lang, self.ctype, lang_fallback)
         if self.inherited and not content:
             for ancestor in page_obj.get_ancestors():
-                content = Content.objects.get_content(ancestor, lang,
-                    self.name, lang_fallback)
+                content = Content.objects.get_content(
+                    ancestor, lang,
+                    self.ctype, lang_fallback)
                 if content:
                     break
         return content
 
+    def get_lang(self, context):
+        if self.untranslated:
+            lang = settings.PAGE_DEFAULT_LANGUAGE
+        else:
+            lang = context.get('lang', settings.PAGE_DEFAULT_LANGUAGE)
+        return lang
+
     def get_content_from_context(self, context):
-        if not self.page in context:
+        if self.untranslated:
+            lang_fallback = False
+        else:
+            lang_fallback = True
+
+        if self.shared:
+            return self.get_content(
+                None,
+                self.get_lang(context),
+                lang_fallback)
+        if self.page not in context:
             return ''
         # current_page can be set to None
         if not context[self.page]:
             return ''
 
-        if self.untranslated:
-            lang_fallback = False
-            lang = settings.PAGE_DEFAULT_LANGUAGE
-        else:
-            lang_fallback = True
-            lang = context.get('lang', settings.PAGE_DEFAULT_LANGUAGE)
-        return self.get_content(context[self.page], lang, lang_fallback)
+        return self.get_content(
+            context[self.page],
+            self.get_lang(context),
+            lang_fallback)
+
+    def get_render_content(self, context):
+        if self.nodelist:
+            with context.push():
+                context['content'] = self.get_content_from_context(context)
+                output = self.nodelist.render(context)
+            return mark_safe(output)
+        return mark_safe(self.get_content_from_context(context))
+
+    def render_parsed(self, context, content):
+        try:
+            content_template = template.Template(content, name=self.name)
+            new_content = mark_safe(content_template.render(context))
+        except TemplateSyntaxError as error:
+            if global_settings.DEBUG:
+                new_content = PLACEHOLDER_ERROR % {
+                    'name': self.name,
+                    'error': error,
+                }
+            else:
+                new_content = ''
+        return new_content
+
+    def edit_tag(self):
+        return u"""<!--placeholder ;{};-->""".format(self.name)
 
     def render(self, context):
-        """Output the content of the `PlaceholdeNode` in the template."""
+        """Output the content of the `PlaceholdeNode` as a template."""
+        content = self.get_render_content(context)
+        request = context.get('request')
+        render_edit_tag = False
+        if request and request.user.is_staff and request.COOKIES.get('enable_edit_mode'):
+            render_edit_tag = True
 
-        content = mark_safe(self.get_content_from_context(context))
         if not content:
-            return ''
+            if not render_edit_tag:
+                return ''
+            return self.edit_tag()
+
         if self.parsed:
-            try:
-                t = template.Template(content, name=self.name)
-                content = mark_safe(t.render(context))
-            except TemplateSyntaxError, error:
-                if global_settings.DEBUG:
-                    content = PLACEHOLDER_ERROR % {
-                        'name': self.name,
-                        'error': error,
-                    }
-                else:
-                    content = ''
+            content = self.render_parsed(context, content)
+
         if self.as_varname is None:
-            return content
+            if not render_edit_tag:
+                return content
+            return content + self.edit_tag()
         context[self.as_varname] = content
         return ''
 
@@ -232,52 +308,28 @@ class PlaceholderNode(template.Node):
         return "<Placeholder Node: %s>" % self.name
 
 
-class ImagePlaceholderNode(PlaceholderNode):
-    """A `PlaceholderNode` that saves one image on disk.
-
-    `PAGE_UPLOAD_ROOT` setting define where to save the image.
+def get_filename(page, content_type, data):
     """
+    Generate a stable filename using the original filename of the type.
 
-    def get_field(self, page, language, initial=None):
-        help_text = ""
-        widget = ImageInput(page, language)
-        return ImageField(
-            widget=widget,
-            initial=initial,
-            help_text=help_text,
-            required=False
-        )
 
-    def save(self, page, language, data, change, extra_data=None):
-        if 'delete' in extra_data:
-            return super(ImagePlaceholderNode, self).save(
-                page,
-                language,
-                "",
-                change
-            )
-        filename = ''
-        if change and data:
-            # the image URL is posted if not changed
-            if type(data) is unicode:
-                return
-            filename = os.path.join(
-                settings.PAGE_UPLOAD_ROOT,
-                'page_' + str(page.id),
-                self.name + '-' + str(time.time())
-            )
+    """
+    avoid_collision = uuid.uuid4().hex[:8]
 
-            m = re.search('\.[a-zA-Z]{1,4}$', str(data))
-            if m is not None:
-                filename += m.group(0).lower()
+    name_parts = data.name.split('.')
+    if len(name_parts) > 1:
+        name = slugify('.'.join(name_parts[:-1]), allow_unicode=True)
+        ext = slugify(name_parts[-1])
+        name = name + '.' + ext
+    else:
+        name = slugify(data.name)
+    filename = os.path.join(
+        settings.PAGE_UPLOAD_ROOT,
+        'page_' + str(page.id),
+        content_type + '-' + avoid_collision + '-' + name
+    )
+    return filename
 
-            filename = default_storage.save(filename, data)
-            return super(ImagePlaceholderNode, self).save(
-                page,
-                language,
-                filename,
-                change
-            )
 
 class FilePlaceholderNode(PlaceholderNode):
     """A `PlaceholderNode` that saves one file on disk.
@@ -296,29 +348,44 @@ class FilePlaceholderNode(PlaceholderNode):
         )
 
     def save(self, page, language, data, change, extra_data=None):
-        if 'delete' in extra_data:
+        if self.shared:
+            page = None
+
+        if extra_data and 'delete' in extra_data:
             return super(FilePlaceholderNode, self).save(
                 page,
                 language,
                 "",
                 change
             )
+            return
+        if extra_data and 'revision' in extra_data:
+            return super(FilePlaceholderNode, self).save(
+                page,
+                language,
+                extra_data['revision'],
+                change
+            )
+            return
+        if extra_data and 'selected' in extra_data and extra_data['selected']:
+            return super(FilePlaceholderNode, self).save(
+                page,
+                language,
+                extra_data['selected'],
+                change
+            )
+            return
+
         filename = ''
         if change and data:
             # the image URL is posted if not changed
-            if type(data) is unicode:
+            if not isinstance(data, UploadedFile):
                 return
-            filename = os.path.join(
-                settings.PAGE_UPLOAD_ROOT,
-                'page_' + str(page.id),
-                self.name + '-' + str(time.time())
-            )
 
-            m = re.search('\.[a-zA-Z]{1,4}$', str(data))
-            if m is not None:
-                filename += m.group(0).lower()
-
+            filename = get_filename(page, self.ctype, data)
             filename = default_storage.save(filename, data)
+            media = Media(url=filename)
+            media.save()
             return super(FilePlaceholderNode, self).save(
                 page,
                 language,
@@ -327,59 +394,85 @@ class FilePlaceholderNode(PlaceholderNode):
             )
 
 
+class ImagePlaceholderNode(FilePlaceholderNode):
+    """A `PlaceholderNode` that saves one image on disk.
+
+    `PAGE_UPLOAD_ROOT` setting define where to save the image.
+    """
+
+    def get_field(self, page, language, initial=None):
+        help_text = ""
+        widget = ImageInput(page, language)
+        return ImageField(
+            widget=widget,
+            initial=initial,
+            help_text=help_text,
+            required=False
+        )
+
+
 class ContactForm(forms.Form):
-  
+    """
+    Simple contact form
+    """
     email = forms.EmailField(label=_('Your email'))
-    subject = forms.CharField(label=_('Subject'), 
-      max_length=150)
-    message = forms.CharField(widget=forms.Textarea(),
-      label=_('Your message'))
-    
+    subject = forms.CharField(
+        label=_('Subject'), max_length=150)
+    message = forms.CharField(
+        widget=forms.Textarea(), label=_('Your message'))
+
 
 class ContactPlaceholderNode(PlaceholderNode):
     """A contact `PlaceholderNode` example."""
 
     def render(self, context):
-        content = self.get_content_from_context(context)
         request = context.get('request', None)
         if not request:
-            raise ValueError('request no available in the context.')
+            raise ValueError('request not available in the context.')
         if request.method == 'POST':
             form = ContactForm(request.POST)
             if form.is_valid():
                 data = form.cleaned_data
                 recipients = [adm[1] for adm in global_settings.ADMINS]
                 try:
-                    send_mail(data['subject'], data['message'], 
+                    send_mail(
+                        data['subject'], data['message'],
                         data['email'], recipients, fail_silently=False)
                     return _("Your email has been sent. Thank you.")
                 except:
                     return _("An error as occured: your email has not been sent.")
         else:
             form = ContactForm()
-        renderer = render_to_string('pages/contact.html', {'form':form})
+        renderer = render_to_string(
+            'pages/contact.html', {'form': form}, RequestContext(request))
         return mark_safe(renderer)
 
 
-class VideoPlaceholderNode(PlaceholderNode):
-    """A youtube `PlaceholderNode`, just here as an example."""
+class JsonPlaceholderNode(PlaceholderNode):
+    """
+    A `PlaceholderNode` that try to return a deserialized JSON object
+    in the template.
+    """
 
-    widget = VideoWidget
+    def get_render_content(self, context):
+        import json
+        content = self.get_content_from_context(context)
+        try:
+            return json.loads(str(content))
+        except:
+            logger.warning("JsonPlaceholderNode: coudn't decode json")
+        return content
+
+
+class MarkdownPlaceholderNode(PlaceholderNode):
+    """
+    A `PlaceholderNode` that return HTML from MarkDown format
+    """
+
+    widget = Textarea
 
     def render(self, context):
+        """Render markdown."""
+        import markdown
         content = self.get_content_from_context(context)
-        if not content:
-            return ''
-        if content:
-            video_url, w, h = content.split('\\')
-            m = re.search('youtube\.com\/watch\?v=([^&]+)', content)
-            if m:
-                video_url = 'http://www.youtube.com/v/' + m.group(1)
-            if not w:
-                w = 425
-            if not h:
-                h = 344
-            context = {'video_url': video_url, 'w': w, 'h': h}
-            renderer = render_to_string('pages/embed.html', context)
-            return mark_safe(renderer)
-        return ''
+        return markdown.markdown(content)

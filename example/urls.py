@@ -1,30 +1,34 @@
-import authority
 
-from django.conf.urls.defaults import url, include, patterns
-from django.conf.urls.defaults import handler404, handler500
+from django.conf import settings
+from django.conf.urls import include, url
+from django.conf.urls.static import static
 from django.contrib import admin
-from django.contrib.staticfiles.urls import staticfiles_urlpatterns
-from pages.views import details
-
-from pages.urlconf_registry import register_urlconf
-register_urlconf('test', 'pages.testsproject.documents.urls')
 
 admin.autodiscover()
-authority.autodiscover()
 
-urlpatterns = patterns('',
-    (r'^authority/', include('authority.urls')),
-    (r'^i18n/', include('django.conf.urls.i18n')),
-    (r'^admin/', include(admin.site.urls)),
 
-    # make tests fail if a backend is not present on the system
-    (r'^search/', include('haystack.urls')),
+urlpatterns = [
+    url(r'^i18n/', include('django.conf.urls.i18n')),
+    # url(r'^grappelli/', include('grappelli.urls')),  # grappelli URLS
+    url(r'^admin/', include(admin.site.urls)),
+]
 
-)
+try:
+	import haystack
+	urlpatterns += [url(r'^search/', include('haystack.urls'), name='haystack_search')]
+except ImportError:
+	pass
 
-urlpatterns += staticfiles_urlpatterns()
+urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT, show_indexes=True)
+urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT, show_indexes=True)
 
-urlpatterns += patterns('',
-    # this gonna match /admin if someone forget the traling slash
-    (r'^', include('pages.urls')),
-)
+
+if 'ckeditor' in settings.INSTALLED_APPS:
+    urlpatterns += [
+        url(r'^ckeditor/', include('ckeditor.urls')),
+    ]
+
+urlpatterns += [
+    # this will match /admin if someone forget the traling slash
+    url(r'^', include('pages.urls')),
+]

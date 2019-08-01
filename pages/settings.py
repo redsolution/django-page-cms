@@ -4,6 +4,7 @@ application when the project ``settings`` module does not contain
 the appropriate settings."""
 from django.conf import settings
 from django.core.exceptions import ImproperlyConfigured
+import collections
 
 url = 'http://packages.python.org/django-page-cms/settings-list.html#%s'
 
@@ -49,7 +50,9 @@ PAGE_TEMPLATES = get_setting('PAGE_TEMPLATES',
 
 def get_page_templates():
     """The callable that is used by the CMS."""
-    if callable(PAGE_TEMPLATES):
+    PAGE_TEMPLATES = get_setting('PAGE_TEMPLATES',
+        default_value=())
+    if isinstance(PAGE_TEMPLATES, collections.Callable):
         return PAGE_TEMPLATES()
     else:
         return PAGE_TEMPLATES
@@ -63,18 +66,21 @@ if PAGE_TAGGING and "taggit" not in getattr(settings, 'INSTALLED_APPS', []):
                                'correctly or disable the tagging feature by '
                                'setting PAGE_TAGGING to False.')
 
-# Set this to ``True`` if you wish to use the ``django-tinymce`` application.
-PAGE_TINYMCE = getattr(settings, 'PAGE_TINYMCE', False)
-if PAGE_TINYMCE and "tinymce" not in getattr(settings, 'INSTALLED_APPS', []):
-    raise ImproperlyConfigured('django-tinymce could not be found.\n'
-                               'Please make sure you\'ve installed it '
-                               'correctly or disable the tinymce feature by '
-                               'setting PAGE_TINYMCE to False.')
+def _default_tagging_field():
+    from taggit.managers import TaggableManager
+    return TaggableManager(blank=True)
+PAGE_TAGGING_FIELD = getattr(settings, 'PAGE_TAGGING_FIELD', _default_tagging_field)
 
 # Set ``PAGE_UNIQUE_SLUG_REQUIRED`` to ``True`` to enforce unique slug names
 # for all pages.
 PAGE_UNIQUE_SLUG_REQUIRED = getattr(settings, 'PAGE_UNIQUE_SLUG_REQUIRED',
                                     False)
+
+# Set ``PAGE_UNIQUE_SLUG_REQUIRED`` to ``True`` to rename automaticaly a duplicate slug
+# another page as an identic slug
+PAGE_AUTOMATIC_SLUG_RENAMING = getattr(settings, 'PAGE_AUTOMATIC_SLUG_RENAMING',
+                                    False)
+
 
 # Set ``PAGE_CONTENT_REVISION`` to ``False`` to disable the recording of
 # pages revision information in the database
@@ -138,16 +144,11 @@ PAGE_EXTRA_PERMISSIONS = getattr(settings, 'PAGE_EXTRA_PERMISSIONS', extra)
 #     PAGE_LANGUAGE_MAPPING = language_mapping
 PAGE_LANGUAGE_MAPPING = getattr(settings, 'PAGE_LANGUAGE_MAPPING', lambda l: l)
 
-# Set SITE_ID to the id of the default ``Site`` instance to be used on
-# installations where content from a single installation is served on
-# multiple domains via the ``django.contrib.sites`` framework.
-SITE_ID = getattr(settings, 'SITE_ID', 1)
-
 # Set PAGE_USE_SITE_ID to ``True`` to make use of the ``django.contrib.sites``
 # framework
 PAGE_USE_SITE_ID = getattr(settings, 'PAGE_USE_SITE_ID', False)
 
-# Set PAGE_HIDE_SITES to make the sites that appear uneditable and only allow
+# Set PAGE_HIDE_SITES to make the sites appear uneditable and only allow
 # editing and creating of pages on the current site
 PAGE_HIDE_SITES = getattr(settings, 'PAGE_HIDE_SITES', False)
 
@@ -166,15 +167,17 @@ PAGE_CONTENT_REVISION_EXCLUDE_LIST = getattr(settings,
     'PAGE_CONTENT_REVISION_EXCLUDE_LIST', ()
 )
 
-# Set ``PAGE_SANITIZE_USER_INPUT`` to ``True`` to sanitize the user input with
-# ``html5lib``
-PAGE_SANITIZE_USER_INPUT = getattr(settings, 'PAGE_SANITIZE_USER_INPUT', False)
-
-# URL that handles pages media and uses <STATIC_URL>/pages by default.
 PAGES_MEDIA_URL = get_setting('PAGES_MEDIA_URL')
 if not PAGES_MEDIA_URL:
-    media_url = get_setting('STATIC_URL', 'MEDIA_URL', raise_error=True)
-    PAGES_MEDIA_URL = str(media_url) + 'pages/'
+    media_url = get_setting('PAGES_MEDIA_URL', 'MEDIA_URL', raise_error=True)
+    PAGES_MEDIA_URL = str(media_url)
+
+PAGES_STATIC_URL = get_setting('PAGES_STATIC_URL')
+if not PAGES_STATIC_URL:
+    static_url = get_setting('PAGES_STATIC_URL', 'STATIC_URL', raise_error=True)
+    static_url = static_url + 'pages/'
+    PAGES_STATIC_URL = str(static_url)
+
 
 # Hide the slug's of the first root page ie: ``/home/`` becomes ``/``
 PAGE_HIDE_ROOT_SLUG = getattr(settings, 'PAGE_HIDE_ROOT_SLUG', False)
@@ -191,24 +194,6 @@ PAGE_SHOW_START_DATE = getattr(settings, 'PAGE_SHOW_START_DATE', False)
 # your database and null any pages with ``publication_end_date`` set.
 PAGE_SHOW_END_DATE = getattr(settings, 'PAGE_SHOW_END_DATE', False)
 
-# ``PAGE_CONNECTED_MODELS`` allows you to specify a model and form for this
-# model into your settings to get an automatic form to create
-# and directly link a new instance of this model with your page in the admin.
-#
-# Here is an example:
-#
-# PAGE_CONNECTED_MODELS = [
-#     {'model':'documents.models.Document',
-#        'form':'documents.models.DocumentForm'},
-# ]
-#
-PAGE_CONNECTED_MODELS = getattr(settings, 'PAGE_CONNECTED_MODELS', False)
-
-# The page link filter enable a output filter on you content links. The goal
-# is to transform special page class into real links at the last moment.
-# This ensure that even if you have moved a page, the URL will remain correct.
-PAGE_LINK_FILTER = getattr(settings, 'PAGE_LINK_FILTER', False)
-
 # This setting is a function that can be defined if you need to pass extra
 # context dict to the pages templates. You can customize the way the function
 # is called by subclassing ``pages.views.Details``.
@@ -218,9 +203,25 @@ PAGE_EXTRA_CONTEXT = getattr(settings, 'PAGE_EXTRA_CONTEXT', None)
 # placeholder images, is placed.
 PAGE_UPLOAD_ROOT = getattr(settings, 'PAGE_UPLOAD_ROOT', 'upload')
 
-# Enable real time search indexation for the pages
+# Enable real time search indexation for the pages, to use only
+# with haystack < 2.0. With the version 2.0 use the HAYSTACK_SIGNAL_PROCESSOR
+# setting
 PAGE_REAL_TIME_SEARCH = getattr(settings, 'PAGE_REAL_TIME_SEARCH', False)
 
 # Disable the tests by default so they don't execute when the user
 # execute manage.py test
 PAGE_ENABLE_TESTS = getattr(settings, 'PAGE_ENABLE_TESTS', False)
+
+# Import / Export in admin interface
+PAGE_IMPORT_ENABLED = getattr(settings, 'PAGE_IMPORT_ENABLED', False)
+PAGE_EXPORT_ENABLED = getattr(settings, 'PAGE_EXPORT_ENABLED', False)
+
+# Enable the API or not
+PAGE_API_ENABLED = getattr(settings, 'PAGE_API_ENABLED', False)
+
+# If you want to see screenshots from selenium tests override this
+PAGE_TESTS_SAVE_SCREENSHOTS = getattr(settings, 'PAGE_TESTS_SAVE_SCREENSHOTS',
+                                     False)
+
+# If you want to redirect to new page url
+PAGE_REDIRECT_OLD_SLUG = getattr(settings, 'PAGE_REDIRECT_OLD_SLUG', False)

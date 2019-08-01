@@ -1,24 +1,16 @@
 # -*- coding: utf-8 -*-
 from setuptools import setup, find_packages
-from pkg_resources import require, DistributionNotFound
-import pages
 import os
+import pages
+
 package_name = 'django-page-cms'
+
+base = os.path.dirname(__file__)
 
 
 def local_open(fname):
-    return open(os.path.join(os.path.dirname(__file__), fname))
+    return open(os.path.join(base, fname), 'r')
 
-requirements = local_open('requirements/external_apps.txt')
-
-# Build the list of dependency to install
-required_to_install = []
-for dist in requirements.readlines():
-    dist = dist.strip()
-    try:
-        require(dist)
-    except DistributionNotFound:
-        required_to_install.append(dist)
 
 data_dirs = []
 for directory in os.walk('pages/templates'):
@@ -33,12 +25,60 @@ for directory in os.walk('pages/static'):
 for directory in os.walk('pages/locale'):
     data_dirs.append(directory[0][6:] + '/*.*')
 
+for directory in os.walk('pages/fixtures'):
+    data_dirs.append(directory[0][6:] + '/*.*')
+
+example_dirs = []
+for directory in os.walk('example/templates'):
+    example_dirs.append(directory[0][8:] + '/*.*')
+
 url_schema = 'http://pypi.python.org/packages/source/d/%s/%s-%s.tar.gz'
 download_url = url_schema % (package_name, package_name, pages.__version__)
 
+install_requires = [
+    'Django>=1.8,<2',
+    'django-mptt>=0.8.3',
+    'django-taggit>=0.18.1',
+    'Pillow>=3.2.0',
+    'requests>=2.9.0',
+    'six>=1.10.0',
+    'tqdm>=4.4.1',
+]
+
+extra = [
+    'django-ckeditor>=5.0.3',
+    'django-haystack>=2.5.0',
+    'djangorestframework>=3.3.2',
+    'Markdown>=2.6.6',
+    'polib>=1.0.7',
+    'Whoosh>=2.7.4',
+]
+
+tests_require = [
+    'coverage>=4.2.0',
+    'selenium>=3.0.1',
+]
+
+docs_require = [
+    'Sphinx',
+    'sphinx-better-theme',
+    'Sphinx-PyPI-upload',
+]
+
+extras_require = {
+    'docs': install_requires + extra + docs_require,
+    'extra': extra,
+    'full': install_requires + extra,
+    'tests': install_requires + extra + tests_require,
+}
+
+dependency_links = [
+    'git+ssh://git@github.com/django-haystack/django-haystack.git@42f53cda9a770ff7daf2ff792cbcab5cd843e2a7#egg=django-haystack'
+]
+
 setup(
     name=package_name,
-    test_suite='pages.test_runner.run_tests',
+    test_suite='pages.test_runner.build_suite',
     version=pages.__version__,
     description=pages.__doc__,
     author=pages.__author__,
@@ -47,11 +87,14 @@ setup(
     license=pages.__license__,
     long_description=local_open('README.rst').read(),
     download_url=download_url,
-    install_requires=required_to_install,
-    packages=find_packages(exclude=['example', 'example.*']),
+    install_requires=install_requires,
+    extras_require=extras_require,
+    tests_require=tests_require,
+    dependency_links=dependency_links,
+    packages=find_packages(),
     # very important for the binary distribution to include the templates.
-    package_data={'pages': data_dirs},
-    #include_package_data=True, # include package data under svn source control
+    package_data={'pages': data_dirs, 'example': example_dirs},
+    # include_package_data=True, # include package data under svn source control
     zip_safe=False,
     classifiers=[
         'Development Status :: 5 - Production/Stable',
@@ -61,8 +104,15 @@ setup(
         'Operating System :: OS Independent',
         'Programming Language :: Python',
         'Framework :: Django',
-        'Programming Language :: Python :: 2.3',
+        'Programming Language :: Python :: 2.7',
+        'Programming Language :: Python :: 3.3',
+        'Programming Language :: Python :: 3.4',
+        'Programming Language :: Python :: 3.5',
+        'Programming Language :: Python :: 3.6',
         'Programming Language :: JavaScript',
-        'Topic :: Internet :: WWW/HTTP :: Site Management',
+        'Topic :: Internet :: WWW/HTTP :: Site Management'
     ],
+    entry_points={
+        'console_scripts': ['gerbi=pages.command_line:main'],
+    }
 )

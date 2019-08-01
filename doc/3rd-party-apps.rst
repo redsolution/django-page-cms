@@ -14,19 +14,15 @@ First you need a `urls.py` file that you can register to the CMS. It might look 
 
     from django.conf.urls.defaults import *
     from pages.testproj.documents.views import document_view
-    from pages.http import pages_view
 
     urlpatterns = patterns('',
-        url(r'^doc-(?P<document_id>[0-9]+)$', pages_view(document_view), name='document_details'),
-        url(r'^$', pages_view(document_view), name='document_root'),
+        url(r'^doc-(?P<document_id>[0-9]+)$', document_view, name='document_details'),
+        url(r'^$', document_view, name='document_root'),
     )
 
 .. note::
 
-    The decorator `pages_view` call the CMS if the context variables `current_page` and `pages_navigation` are not present
-    in the arguments.
-
-    It's not necessary to decorate your views if you only call them via the CMS or you don't need those variables.
+    The CMS will pass the keyword arguments `current_page` and `pages_navigation` to the view
 
 Then you need to register the urlconf module of your application to use it
 within the admin interface. Put this code in you urls.py `before` admin.autodiscover(). Here is an example for a document application.::
@@ -89,42 +85,6 @@ The `document_view` will receive a bunch of extra parameters related to the CMS:
 
     Look at the testproj in the repository for an example on how to integrate
     an external application.
-
-.. _3rd-party-apps:
-
-Integrate application models and forms into the page admin
-==========================================================
-
-If you don't want to sublass the PageAdmin class Gerbi provides an alternative way
-to integrate external application into the page's administration interface.
-
-For this you need an object with foreign key pointing to a page::
-
-    class Document(models.Model):
-        "A dummy model used to illustrate the use of linked models in Gerbi CMS"
-
-        title = models.CharField(_('title'), max_length=100, blank=False)
-        text = models.TextField(_('text'), blank=True)
-
-        # You need a foreign key to the page object, and it must be named page
-        page = models.ForeignKey(Page)
-
-    class DocumentForm(ModelForm):
-        class Meta:
-            model = Document
-
-After that you need to set up the PAGE_CONNECTED_MODELS into your settings similar to this one::
-
-    PAGE_CONNECTED_MODELS = [{
-        'model':'documents.models.Document',
-        'form':'documents.models.DocumentForm',
-        'options':{
-                'extra': 3,
-                'max_num': 10,
-            },
-    },]
-
-When you edit a page, you should see a form to create/update/delete a Document object linked to this page.
 
 .. _sitemaps:
 

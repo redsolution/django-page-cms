@@ -3,7 +3,9 @@ Display page's content in templates
 ===================================
 
 Gerbi CMS provide several template tags to extract data from the CMS.
-To use these tags in your templates you must load them first::
+To use these tags in your templates you must load them first:
+
+.. code-block:: html+django
 
     {% load pages_tags %}
 
@@ -14,15 +16,21 @@ To use these tags in your templates you must load them first::
 get_content
 -----------
 
-Store a content type from a page into a context variable that you can reuse after::
+Store a content type from a page into a context variable that you can reuse after:
+
+.. code-block:: html+django
 
     {% get_content current_page "title" as content %}
 
-You can also use the slug of a page::
+You can also use the slug of a page:
+
+.. code-block:: html+django
 
     {% get_content "my-page-slug" "title" as content %}
 
-You can also use the id of a page::
+You can also use the id of a page:
+
+.. code-block:: html+django
 
     {% get_content 10 "title" as content %}
 
@@ -33,7 +41,9 @@ You can also use the id of a page::
 show_content
 ------------
 
-Output the content of a page directly within the template::
+Output the content of a page directly within the template:
+
+.. code-block:: html+django
 
     {% show_content current_page "title" %}
 
@@ -41,11 +51,37 @@ Output the content of a page directly within the template::
 
     You can use either the page object, the slug, or the id of the page.
 
+page_has_content
+----------------
+
+Conditional tag that only renders its nodes if the page
+has content for a particular content type. By default the
+current page is used.
+
+Syntax:
+
+.. code-block:: html+django
+
+    {% page_has_content <content_type> [<page var name>] %}
+        ...
+    {% end page_has_content %}
+
+Example:
+
+.. code-block:: html+django
+
+    {% page_has_content 'header-image' %}
+        <img src="{{ MEDIA_URL }}{% imageplaceholder 'header-image' %}">
+    {% end_page_has_content %}
+
+
 get_page
 ------------
 
 Retrieve a Page object and store it into a context variable that you can reuse after. Here is
-an example of the use of this template tag to display a list of news::
+an example of the use of this template tag to display a list of news:
+
+.. code-block:: html+django
 
     <h2>Latest news</h2>
     {% get_page "news" as news_page %}
@@ -64,11 +100,31 @@ an example of the use of this template tag to display a list of news::
 
     You can use either the slug, or the id of the page.
 
+get_pages_with_tag
+---------------------
+
+Retrieve a Pages objects with given tag and store it into a context variable that you can reuse after. Here is
+an example of the use of this template tag to display a list of footer pages:
+
+.. code-block:: html+django
+
+    <h2>Footer</h2>
+    {% get_pages_with_tag "footer" as footer_pages %}
+    <ul>
+    {% for page in footer_pages %}
+        <li>
+            <a href="{{ page.url }}">{{ page.title }}</a>
+        </li>
+    {% endfor %}
+    </ul>
+
 show_absolute_url
------------------
+-------------------
 
 This tag show the absolute url of a page. The difference with the `Page.get_url_path` method is
-that the template knows which language is used within the context and display the URL accordingly::
+that the template knows which language is used within the context and display the URL accordingly:
+
+.. code-block:: html+django
 
     {% show_absolute_url current_page %}
 
@@ -77,56 +133,18 @@ that the template knows which language is used within the context and display th
     You can use either the page object, the slug, or the id of the page.
 
 
-Display content from other applications
-----------------------------------------
-
-There is several ways to change the way the default view provided
-by the CMS render the pages. This list try explain the most common.
-
-Using the PAGE_EXTRA_CONTEXT setting
-======================================
-
-Considering you have a simple news model::
-
-    class News(models.Model):
-        title = models.CharField(max_length=200)
-        postdate = models.DateTimeField(default=datetime.now)
-        body = models.CharField(max_length=200)
-
-And that you would like to display a list of news into some of your page's templates::
-
-    <ul>
-    {% for new in news %}
-        <li>
-            <h2>{{ news.title }}</p>
-            <p>{{ news.body }}</p>
-        </li>
-    {% endfor %}
-    </ul>
-
-Then you might want to use the `PAGE_EXTRA_CONTEXT` setting. You should set this setting to be a function.
-This function should return a Python dictionary. This dictionary will be merged with the context of
-every page of your website.
-
-Example in the case of the news::
-
-    def extra_context():
-        from news.models import News
-        lastest_news = News.object.all()
-        return {'news': lastest_news}
-
-    PAGE_EXTRA_CONTEXT = extra_context
-
 Delegate the page rendering to another application
-===================================================
+----------------------------------------------------
 
 :doc:`You can set another application to render certain pages of your website </3rd-party-apps>`.
 
 Subclass the default view
-===================================================
+-----------------------------
 
-New in 1.3.0: The default view is now a real class. That will
-help if you want to override some default behavior::
+This CMS view is a class based view. This means is is easy
+to override some default behavior. For example if you want to inject
+additional context information into all the pages templates you can override
+th method extra_context::
 
 
     from pages.views import Details
@@ -136,11 +154,12 @@ help if you want to override some default behavior::
 
         def extra_context(self, request, context):
             lastest_news = News.object.all()
-            return {'news': lastest_news}
+            context.update({'news': lastest_news})
 
     details = NewsView()
 
-And don't forget to redefine the urls to point to your new view with something similar to this code::
+For your view to be used in place of the CMS one, you simply need
+to point to it with something similar to this::
 
     from django.conf.urls.defaults import url, include, patterns
     from YOUR_APP.views import details
@@ -155,3 +174,8 @@ And don't forget to redefine the urls to point to your new view with something s
         urlpatterns = patterns('',
             url(r'^(?P<path>.*)$', details, name='pages-details-by-path')
         )
+
+.. note::
+
+    Have a look at `pages.urls` for a up to date example of URLs configuration.
+

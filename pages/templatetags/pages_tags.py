@@ -1,16 +1,24 @@
 """Page CMS page_tags template tags"""
 from django import template
-from django.utils.safestring import SafeUnicode
+from django.utils.safestring import SafeText
 from django.template import TemplateSyntaxError
-#from django.forms import Widget, Textarea, ImageField, CharField
-import urllib
 from django.conf import settings
+from django.utils.text import unescape_string_literal
+from django import forms
+from django.template.loader import get_template
+from django.contrib.staticfiles.templatetags.staticfiles import static
 
 from pages import settings as pages_settings
 from pages.models import Content, Page
-from pages.placeholders import PlaceholderNode, ImagePlaceholderNode, FilePlaceholderNode
-from pages.placeholders import VideoPlaceholderNode, ContactPlaceholderNode
-from pages.placeholders import parse_placeholder
+from pages.placeholders import (
+    PlaceholderNode, ImagePlaceholderNode, FilePlaceholderNode
+)
+from pages.placeholders import ContactPlaceholderNode, MarkdownPlaceholderNode
+from pages.placeholders import JsonPlaceholderNode, parse_placeholder
+from six.moves import urllib
+import six
+from pages.utils import get_placeholders
+
 
 register = template.Library()
 
@@ -20,8 +28,8 @@ def get_page_from_string_or_id(page_string, lang=None):
     if type(page_string) == int:
         return Page.objects.get(pk=int(page_string))
     # if we have a string coming from some templates templates
-    if (isinstance(page_string, SafeUnicode) or
-        isinstance(page_string, unicode)):
+    if (isinstance(page_string, SafeText) or
+            isinstance(page_string, six.string_types)):
         if page_string.isdigit():
             return Page.objects.get(pk=int(page_string))
         return Page.objects.from_path(page_string, lang)
@@ -46,6 +54,7 @@ def _get_content(context, page, content_type, lang, fallback=True):
     content = Content.objects.get_content(page, lang, content_type, fallback)
     return content
 
+
 """Filters"""
 
 
@@ -56,7 +65,11 @@ def has_content_in(page, language):
     :param page: the current page
     :param language: the language you want to look at
     """
+    if page is None:
+        return False
     return Content.objects.filter(page=page, language=language).count() > 0
+
+
 register.filter(has_content_in)
 
 
@@ -76,6 +89,8 @@ def pages_menu(context, page, url='/'):
         children = page.get_children_for_frontend()
         context.update({'children': children, 'page': page})
     return context
+
+
 pages_menu = register.inclusion_tag('pages/menu.html',
                                     takes_context=True)(pages_menu)
 
@@ -95,6 +110,8 @@ def pages_sub_menu(context, page, url='/'):
         children = root.get_children_for_frontend()
         context.update({'children': children, 'page': page})
     return context
+
+
 pages_sub_menu = register.inclusion_tag('pages/sub_menu.html',
                                         takes_context=True)(pages_sub_menu)
 
@@ -109,15 +126,14 @@ def pages_siblings_menu(context, page, url='/'):
     lang = context.get('lang', pages_settings.PAGE_DEFAULT_LANGUAGE)
     page = get_page_from_string_or_id(page, lang)
     if page:
-        if page.parent:
-            root = page.parent
-        else:
-            root = page
-        children = root.get_children_for_frontend()
-        context.update({'children': children, 'page': page})
+        siblings = page.get_siblings()
+        context.update({'children': siblings, 'page': page})
     return context
-pages_siblings_menu = register.inclusion_tag('pages/sub_menu.html',
-                                    takes_context=True)(pages_siblings_menu)
+
+
+pages_siblings_menu = register.inclusion_tag(
+    'pages/sub_menu.html',
+    takes_context=True)(pages_siblings_menu)
 
 
 def pages_admin_menu(context, page):
@@ -126,16 +142,22 @@ def pages_admin_menu(context, page):
 
     expanded = False
     if request and "tree_expanded" in request.COOKIES:
-        cookie_string = urllib.unquote(request.COOKIES['tree_expanded'])
+        cookie_string = urllib.parse.unquote(request.COOKIES['tree_expanded'])
         if cookie_string:
-            ids = [int(id) for id in
-                urllib.unquote(request.COOKIES['tree_expanded']).split(',')]
+            ids = [
+                int(id) for id in
+                urllib.parse.unquote(
+                    request.COOKIES['tree_expanded']).split(',')
+            ]
             if page.id in ids:
                 expanded = True
     context.update({'expanded': expanded, 'page': page})
     return context
-pages_admin_menu = register.inclusion_tag('admin/pages/page/menu.html',
-                                        takes_context=True)(pages_admin_menu)
+
+
+pages_admin_menu = register.inclusion_tag(
+    'admin/pages/page/menu.html', takes_context=True
+)(pages_admin_menu)
 
 
 def show_content(context, page, content_type, lang=None, fallback=True):
@@ -159,28 +181,18 @@ def show_content(context, page, content_type, lang=None, fallback=True):
         (default None, use the request object to know)
     :param fallback: use fallback content from other language
     """
-    return {'content': _get_content(context, page, content_type, lang,
-                                                                fallback)}
+    return {'content': _get_content(
+        context, page, content_type, lang, fallback)
+    }
+
+
 show_content = register.inclusion_tag('pages/content.html',
                                       takes_context=True)(show_content)
 
 
-def show_slug_with_level(context, page, lang=None, fallback=True):
-    """Display slug with level by language."""
-    if not lang:
-        lang = context.get('lang', pages_settings.PAGE_DEFAULT_LANGUAGE)
-
-    page = get_page_from_string_or_id(page, lang)
-    if not page:
-        return ''
-
-    return {'content': page.slug_with_level(lang)}
-show_slug_with_level = register.inclusion_tag('pages/content.html',
-                                      takes_context=True)(show_slug_with_level)
-
-
 def show_absolute_url(context, page, lang=None):
-    """Show the url of a page in the right language
+    """
+    Show the url of a page in the right language
 
     Example ::
 
@@ -192,7 +204,7 @@ def show_absolute_url(context, page, lang=None):
 
     Keyword arguments:
     :param page: the page object, slug or id
-    :param lang: the wanted language
+    :param lang: the wanted language \
         (defaults to `settings.PAGE_DEFAULT_LANGUAGE`)
     """
     if not lang:
@@ -204,22 +216,30 @@ def show_absolute_url(context, page, lang=None):
     if url:
         return {'content': url}
     return {'content': ''}
-show_absolute_url = register.inclusion_tag('pages/content.html',
-                                      takes_context=True)(show_absolute_url)
+
+
+show_absolute_url = register.inclusion_tag(
+    'pages/content.html',
+    takes_context=True)(show_absolute_url)
 
 
 def show_revisions(context, page, content_type, lang=None):
     """Render the last 10 revisions of a page content with a list using
         the ``pages/revisions.html`` template"""
-    if not pages_settings.PAGE_CONTENT_REVISION:
+    if (not pages_settings.PAGE_CONTENT_REVISION or
+            content_type in pages_settings.PAGE_CONTENT_REVISION_EXCLUDE_LIST):
         return {'revisions': None}
-    revisions = Content.objects.filter(page=page, language=lang,
-                                type=content_type).order_by('-creation_date')
+    revisions = Content.objects.filter(
+        page=page, language=lang,
+        type=content_type).order_by('-creation_date')
     if len(revisions) < 2:
         return {'revisions': None}
     return {'revisions': revisions[0:10]}
-show_revisions = register.inclusion_tag('pages/revisions.html',
-                                        takes_context=True)(show_revisions)
+
+
+show_revisions = register.inclusion_tag(
+    'pages/revisions.html',
+    takes_context=True)(show_revisions)
 
 
 def pages_dynamic_tree_menu(context, page, url='/'):
@@ -240,12 +260,16 @@ def pages_dynamic_tree_menu(context, page, url='/'):
         current_page = context['current_page']
         # if this node is expanded, we also have to render its children
         # a node is expanded if it is the current node or one of its ancestors
-        if(page.tree_id == current_page.tree_id and
+        if(
+            page.tree_id == current_page.tree_id and
             page.lft <= current_page.lft and
-            page.rght >= current_page.rght):
+            page.rght >= current_page.rght
+        ):
             children = page.get_children_for_frontend()
     context.update({'children': children, 'page': page})
     return context
+
+
 pages_dynamic_tree_menu = register.inclusion_tag(
     'pages/dynamic_tree_menu.html',
     takes_context=True
@@ -269,6 +293,8 @@ def pages_breadcrumb(context, page, url='/'):
         pages_navigation = page.get_ancestors()
     context.update({'pages_navigation': pages_navigation, 'page': page})
     return context
+
+
 pages_breadcrumb = register.inclusion_tag(
     'pages/breadcrumb.html',
     takes_context=True
@@ -276,20 +302,6 @@ pages_breadcrumb = register.inclusion_tag(
 
 
 """Tags"""
-
-
-class FakeCSRFNode(template.Node):
-    """Fake CSRF node for django 1.1.1"""
-    def render(self, context):
-        return ''
-
-
-def do_csrf_token(parser, token):
-    return FakeCSRFNode()
-try:
-    from django.views.decorators.csrf import csrf_protect
-except ImportError:
-    do_csrf_token = register.tag('csrf_token', do_csrf_token)
 
 
 class GetPageNode(template.Node):
@@ -324,6 +336,8 @@ def do_get_page(parser, token):
     page_filter = parser.compile_filter(bits[1])
     varname = bits[-1]
     return GetPageNode(page_filter, varname)
+
+
 do_get_page = register.tag('get_page', do_get_page)
 
 
@@ -384,6 +398,8 @@ def do_get_content(parser, token):
     else:
         lang_filter = parser.compile_filter("lang")
     return GetContentNode(page, content_type, varname, lang, lang_filter)
+
+
 do_get_content = register.tag('get_content', do_get_content)
 
 
@@ -412,7 +428,78 @@ def do_load_pages(parser, token):
         </ul>
     """
     return LoadPagesNode()
+
+
 do_load_pages = register.tag('load_pages', do_load_pages)
+
+
+class LoadEditNode(template.Node):
+    """Load edit node."""
+
+    def render(self, context):
+        request = context.get('request')
+        if not request.user.is_staff:
+            return ''
+        template_name = context.get('template_name')
+        placeholders = get_placeholders(template_name)
+        page = context.get('current_page')
+        if not page:
+            return ''
+        lang = context.get('lang', pages_settings.PAGE_DEFAULT_LANGUAGE)
+        form = forms.Form()
+        for p in placeholders:
+            field = p.get_field(
+                page, lang, initial=p.get_content_from_context(context))
+            form.fields[p.name] = field
+
+        template = get_template('pages/inline-edit.html')
+        with context.push():
+            context['form'] = form
+            context['edit_enabled'] = request.COOKIES.get('enable_edit_mode')
+            content = template.render(context)
+
+        return content
+
+
+def do_load_edit(parser, token):
+    """
+    """
+    return LoadEditNode()
+
+
+do_load_edit = register.tag('pages_edit_init', do_load_edit)
+
+
+class LoadEditMediaNode(template.Node):
+    """Load edit node."""
+
+    def render(self, context):
+        request = context.get('request')
+        if not request.user.is_staff:
+            return ''
+        template_name = context.get('template_name')
+        placeholders = get_placeholders(template_name)
+        page = context.get('current_page')
+        lang = context.get('lang', pages_settings.PAGE_DEFAULT_LANGUAGE)
+        form = forms.Form()
+        for p in placeholders:
+            field = p.get_field(page, lang)
+            form.fields[p.name] = field
+
+        link = '<link href="{}" type="text/css" media="all" rel="stylesheet" />'.format(
+            static('pages/css/inline-edit.css')
+            )
+
+        return "{}{}".format(form.media, link)
+
+
+def do_load_edit_media(parser, token):
+    """
+    """
+    return LoadEditMediaNode()
+
+
+do_load_edit = register.tag('pages_edit_media', do_load_edit_media)
 
 
 def do_placeholder(parser, token):
@@ -432,8 +519,18 @@ def do_placeholder(parser, token):
         {% placeholder teaser on next_page with TextArea parsed %}
     """
     name, params = parse_placeholder(parser, token)
+
     return PlaceholderNode(name, **params)
 register.tag('placeholder', do_placeholder)
+
+
+def do_markdownlaceholder(parser, token):
+    """
+    Method that parse the markdownplaceholder template tag.
+    """
+    name, params = parse_placeholder(parser, token)
+    return MarkdownPlaceholderNode(name, **params)
+register.tag('markdownplaceholder', do_markdownlaceholder)
 
 
 def do_imageplaceholder(parser, token):
@@ -444,6 +541,7 @@ def do_imageplaceholder(parser, token):
     return ImagePlaceholderNode(name, **params)
 register.tag('imageplaceholder', do_imageplaceholder)
 
+
 def do_fileplaceholder(parser, token):
     """
     Method that parse the fileplaceholder template tag.
@@ -452,13 +550,6 @@ def do_fileplaceholder(parser, token):
     return FilePlaceholderNode(name, **params)
 register.tag('fileplaceholder', do_fileplaceholder)
 
-def do_videoplaceholder(parser, token):
-    """
-    Method that parse the imageplaceholder template tag.
-    """
-    name, params = parse_placeholder(parser, token)
-    return VideoPlaceholderNode(name, **params)
-register.tag('videoplaceholder', do_videoplaceholder)
 
 def do_contactplaceholder(parser, token):
     """
@@ -467,6 +558,17 @@ def do_contactplaceholder(parser, token):
     name, params = parse_placeholder(parser, token)
     return ContactPlaceholderNode(name, **params)
 register.tag('contactplaceholder', do_contactplaceholder)
+
+
+def do_jsonplaceholder(parser, token):
+    """
+    Method that parse the contactplaceholder template tag.
+    """
+    name, params = parse_placeholder(parser, token)
+    return JsonPlaceholderNode(name, **params)
+
+
+register.tag('jsonplaceholder', do_jsonplaceholder)
 
 
 def language_content_up_to_date(page, language):
@@ -484,12 +586,88 @@ def language_content_up_to_date(page, language):
         # official version is always "up to date"
         return True
     # get the last modified date for the official version
-    last_modified = Content.objects.filter(language=lang_code,
+    last_modified = Content.objects.filter(
+        language=lang_code,
         page=page).order_by('-creation_date')
     if not last_modified:
         # no official version
         return True
-    lang_modified = Content.objects.filter(language=language,
+    lang_modified = Content.objects.filter(
+        language=language,
         page=page).order_by('-creation_date')[0].creation_date
     return lang_modified > last_modified[0].creation_date
+
+
 register.filter(language_content_up_to_date)
+
+
+@register.assignment_tag
+def get_pages_with_tag(tag):
+    """
+    Return Pages with given tag
+
+    Syntax::
+
+        {% get_pages_with_tag <tag name> as <varname> %}
+
+    Example use::
+        {% get_pages_with_tag "footer" as pages %}
+    """
+    return Page.objects.filter(tags__name__in=[tag])
+
+
+def do_page_has_content(parser, token):
+    """
+    Conditional tag that only renders its nodes if the page
+    has content for a particular content type. By default the
+    current page is used.
+
+    Syntax::
+
+        {% page_has_content <content_type> [<page var name>] %}
+            ...
+        {%_end page_has_content %}
+
+    Example use::
+
+        {% page_has_content 'header-image' %}
+            <img src="{{ MEDIA_URL }}{% imageplaceholder 'header-image' %}">
+        {% end_page_has_content %}
+
+    """
+    nodelist = parser.parse(('end_page_has_content',))
+    parser.delete_first_token()
+    args = token.split_contents()
+    try:
+        content_type = unescape_string_literal(args[1])
+    except IndexError:
+        raise template.TemplateSyntaxError(
+            "%r tag requires the argument content_type" % args[0]
+        )
+    if len(args) > 2:
+        page = args[2]
+    else:
+        page = None
+    return PageHasContentNode(page, content_type, nodelist)
+
+
+register.tag('page_has_content', do_page_has_content)
+
+
+class PageHasContentNode(template.Node):
+
+    def __init__(self, page, content_type, nodelist):
+        self.page = page or 'current_page'
+        self.content_type = content_type
+        self.nodelist = nodelist
+
+    def render(self, context):
+        page = context.get(self.page)
+        if not page:
+            return ''
+        content = page.get_content(
+            context.get('lang', None), self.content_type)
+        if(content):
+            output = self.nodelist.render(context)
+            return output
+        return ''

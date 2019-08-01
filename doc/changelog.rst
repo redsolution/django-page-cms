@@ -2,7 +2,283 @@
  Changelog
 ============
 
-This file describe new features and incompatibilites between released version of the CMS.
+This file describe new features and incompatibilities between released version of the CMS.
+
+Release 1.9.18
+================
+
+Released the 16th of April 2017.
+
+    *
+
+Release 1.9.17
+================
+
+Released the 9th of March 2017.
+
+    * There was an issue with Django-compressor and placeholders that needed fixing
+      https://github.com/django-compressor/django-compressor/pull/825
+
+
+Release 1.9.15
+================
+
+Released the 7th of February 2017.
+
+    * Bugfix for Django 1.11
+
+
+Release 1.9.14
+================
+
+Released the 23rd of January 2017.
+
+    * Bugfix the demo for Django 1.10
+
+
+Release 1.9.13
+================
+
+Released the 23rd of January 2017.
+
+    * Added a Media model for the new media library
+    * Added a way to insert images from the media library into the basic Rich Text Editor
+    * File placeholders now create a new media for each user upload
+
+
+Release 1.9.12
+================
+
+Released the 5th of January 2017.
+
+    * Bugfix
+
+
+Release 1.9.11
+================
+
+Released the 5th of January 2017.
+
+    * Improve the frontend edit mode with an edit bar on the top left of the page so you can disable
+      the edit mode if necessary.
+
+
+Release 1.9.10
+================
+
+Released the 27th of December 2016.
+
+    * Fix a performance issue with new placeholder block parsing. :ref:`Placeholder can now be used as blocks <placeholderasblocks>`
+
+
+Release 1.9.9
+=============
+
+Released the 18th of December 2016.
+
+    * Fix a couple of problems with inline frontend editing
+    * :ref:`Placeholder can now be used as blocks <placeholderasblocks>`
+
+
+Release 1.9.8
+=============
+
+Released the 13th of December 2016.
+
+    * Official support for inline frontend editing
+    * New shared keyword for placeholder: shared content accross pages
+
+
+Release 1.9.7
+=============
+
+Released the 23rd of October 2016.
+
+    * Fix the build and some details in the admin
+    * Improvement in the drag and drop interface
+
+Release 1.9.6
+=============
+
+Released the 11th of September 2016.
+
+    * Improvement in the page edit form UX
+
+Release 1.9.5
+=============
+
+Released the 8th of September 2016.
+
+    * Improvement in the drag and drop UX
+
+Release 1.9.4
+=============
+
+Released the 2nd of September 2016.
+
+    * Changes in setup.py so dependecies can be installed with `pip install django-page-cms[full]`
+
+Release 1.9.3
+=============
+
+Released the 2nd of Semptember 2016.
+
+    * A new conditional template tag called page_has_content
+    * A new gerbi console command to create demo websites: gerbi --create mywebsite
+    * Improve page admin look and feel
+    * Fix problems withing the admin (Javascript errors)
+    * Update documentation
+
+Release 1.9.1
+=============
+
+Released the 12th of June 2016.
+
+    * A new keyword section on the placeholer has been added to create groups
+      in the admin
+    * Language fallback for empty page placeholders in the admin was enabeled
+      and causing possible weirdness
+    * Grappelli support (incomplete)
+    * Support for section (grouping) fields in admin
+    * Clean upload file names
+    * Bug fixes
+    * Basic RTE improvement in the admin
+    * Code cleanup
+
+Release 1.9.0
+=============
+
+Released the 1st of February 2016.
+
+    * Support Django 1.9
+    * Support Python 3.4, 3.5
+    * Redirect to new urls after updating slug. New settings PAGE_REDIRECT_OLD_SLUG
+    * Added get_pages_with_tag templatetag
+    * Added tags in JSON export/import
+    * Code cleanup
+    * PAGE_CACHE_LOCATION setting is removed
+
+Release 1.8.2
+=============
+
+Released the 20th of December 2015.
+
+    * Migrations files were not included in 1.8.1
+    * Add a pages_push and pages_pull command that permit to pull and push content between
+      different hosts in rather smart and non breaking way.
+
+Release 1.8.1
+=============
+
+Released the 24th of September 2015.
+
+    * Added support for a REST API using Django Rest Framework (http://www.django-rest-framework.org/)
+    * Refactoring
+
+Release 1.8.0
+=============
+
+Released the 23rd of April 2015.
+
+    * Updated to Django 1.8
+    * Jumped 2 version to stick with Django versionning numbers
+
+Backward Incompatible Changes
+------------------------------
+
+    * Incompatible with Django 1.7 and lower
+
+Release 1.6.2
+=============
+
+Released the 27th of July 2014.
+
+    * Added a ckeditor placeholder using django-ckeditor
+    * The project now use transifex to handle it's translations (https://www.transifex.com/projects/p/django-page-cms-1/)
+    * Fix several bugs related to placeholders and cache.
+    * Fix a bug with files using non ascii characters.
+    * Fix a bug with the loading icon.
+
+
+Release 1.6.1
+=============
+
+Released the 2nd of June 2014.
+
+    * Fix a bug with the image upload.
+    * Fix a bug with files using non ascii characters.
+    * Fix a bug with the loading icon.
+
+
+Release 1.6.0
+==============
+
+Released the 11th of March 2014.
+
+Highlights
+--------------
+
+    * Full compatibility with Python 3.3 (https://travis-ci.org/batiste/django-page-cms) as well python 2.7 with the same code base.
+    * Django-page-cms is now compatible with Django 1.6.2
+    * Setup selenium tests infrastructure
+    * :ref:`New Markdown Placeholder  <markdownplaceholder>`
+    * Django-page-cms has a test coverage of 90%. Commits that bring this number down will be rejected.
+    * Preserve the language choice across saves in the admin interface
+    * Move the JSON export in it's own plugin application
+
+Backward Incompatible Changes
+------------------------------
+
+    * HTML sanitization and the dependecy to the html5lib have been removed.
+    * Remove support for WYMEditor, markItUp and CKEditor editors. Rational:
+      Those Widget are untested, not updated and were created when packages for those widgets didn't exists as python packages (django-ckeditor, django-wymeditor, django-markitup).
+      If you need those editors please install the package and register the widget to use them directly in your templates.
+    * The pages_navigation context processor has been removed. This is not useful as {% load_pages %} already load the pages_navigation variable in the context.
+    * Removal of the video placeholder. Rational: Used as an example but add no real value to the CMS.
+    * Removal of PageAdminWithDefaultContent. Rational: PageAdminWithDefaultContent is completly untested and can be easily reproduced in any project if necessary.
+    * Move po import/export to it's own plugin application.
+    * PAGE_CONNECTED_MODELS is gone. Use inline admin objects instead https://docs.djangoproject.com/en/dev/ref/contrib/admin/#inlinemodeladmin-objects
+
+Release 1.5.3
+==============
+
+Released the 23 of October 2013.
+
+    * Tiny MCE javascript is not included with this CMS anymore. Please use https://github.com/aljosa/django-tinymce
+    * A more agressive cache should reduce page related SQL queries to 3 once the cache is warm.
+    * A plugin app example as been created in pages.plugins.category.
+    * jquery.query-2.1.7.js is properly restaured this time.
+
+Release 1.5.2
+==============
+
+Released on the first of September 2013.
+
+    * Fix bad migrations.
+    * Test and fix a bug with the PAGE_AUTOMATIC_SLUG_RENAMING option.
+    * Re-introduce a previously delete javascript file (jquery.query-2.1.7.js) necessary in the admin interface.
+    * File and Image placeholer now use the same filename scheme that preserve the original filename.
+
+Release 1.5.1
+==============
+
+Released on the 7th of August 2013.
+
+    * Documentation fixes.
+    * Dependencies on html5lib was incorrect.
+    * Placeholder names can now be any string if quotes are used. "éà àü" is a valid placeholder name.
+
+Release 1.5.0
+==============
+
+    * Full compatibility with Django 1.5
+    * New Drag and Drop interaction in the admin (jquery.ui not needed anymore)
+    * New placeholder JsonPlaceholderNode
+    * New settings PAGE_IMPORT_ENABLED, PAGE_EXPORT_ENABLED and PAGE_AUTOMATIC_SLUG_RENAMING
+    * Haystack 2.0 compatibility (not tested)
+    * Cleanup the admin JavaScript files
+    * Possibility to Substituting a custom User model (new in Django 1.5)
+    * Remove the dependency on BeautifulSoup
 
 Release 1.4.3
 ==============
@@ -43,7 +319,7 @@ Release 1.4.0
     * Added a PAGES_STRICT_URLS setting. If set to `True` the CMS will check for the complete URL instead
       of just the slug. If the complete path doesn't match, a 404 error is raised in the view.
     * Added 2 managing commands for exporting and importing PO translation files into the CMS.
-      :doc:`Documentation on the commands</commands>`
+      :doc:`Documentation on the commands <commands>`
     * Add a PAGE_CONTENT_REVISION_DEPTH setting to limit the amount of revision we want to keep.
     * Fix a bug so the CMS can run without django-taggit installed.
     * Fix a bug with placeholder and template inheritance.
@@ -51,8 +327,8 @@ Release 1.4.0
       use it if you want to define a special URL for the root page.
 
 
-Incompatible changes
----------------------
+Backward Incompatible Changes
+-------------------------------
 
     * New delegation rules: the CMS delegate not only the exact path leading to the page but also
       the whole sub path. :doc:`Documentation on the delegation as been updated</3rd-party-apps>`.

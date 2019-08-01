@@ -9,21 +9,16 @@ import os
 # To make autodoc find the modules
 sys.path.append(os.path.abspath('..'))
 
-from django.conf import settings
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "example.settings")
 import django
-settings.configure(DEBUG=True, TEMPLATE_DEBUG=True,
-    PAGE_DEFAULT_TEMPLATE='index.html',
-    PAGE_TEMPLATES=(),
-    PAGE_LANGUAGES=(),
-    TEMPLATE_DIRS=('/home/web-apps/myapp'))
+django.setup()
 
 # General configuration
 # ---------------------
 
 # Add any Sphinx extension module names here, as strings. They can
 # be extensions coming with Sphinx (named 'sphinx.ext.*') or your custom ones.
-extensions = ['sphinx.ext.autodoc', 'sphinx.ext.doctest',
-    'sphinxcontrib.aafig']
+extensions = ['sphinx.ext.autodoc', 'sphinx.ext.doctest']
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['.templates']
@@ -92,7 +87,8 @@ pygments_style = 'sphinx'
 # The style sheet to use for HTML and HTML Help pages. A file of that name
 # must exist either in Sphinx' static/ path, or in one of the custom paths
 # given in html_static_path.
-# html_style = 'default.css'
+
+html_static_path = ['static']
 
 # The name for this set of Sphinx documents.  If None, it defaults to
 # "<project> v<release> documentation".
@@ -103,7 +99,7 @@ pygments_style = 'sphinx'
 
 # The name of an image file (relative to this directory) to place at the top
 # of the sidebar.
-#html_logo = None
+html_logo = 'gerbi.png'
 
 # The name of an image file (within the static path) to use as favicon of the
 # docs.  This file should be a Windows icon file (.ico) being 16x16 or 32x32
@@ -113,12 +109,13 @@ pygments_style = 'sphinx'
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
-html_static_path = ['nature/static']
+from better import better_theme_path
+html_theme_path = [better_theme_path]
+html_theme = 'better'
 
-# use the nature theme
-# http://github.com/bartTC/sphinx-schemes
-html_theme_path = ['.']
-html_theme = 'nature'
+html_theme_options = {
+    'cssfiles': ['_static/main.css']
+}
 
 # If not '', a 'Last updated on:' timestamp is inserted at every page bottom,
 # using the given strftime format.

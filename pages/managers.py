@@ -1,41 +1,49 @@
 # -*- coding: utf-8 -*-
 """Django page CMS ``managers``."""
 from pages import settings
-from pages.utils import normalize_url, filter_link
-from pages.http import get_slug
+from pages.cache import cache
+from pages.utils import normalize_url, get_now
+from pages.phttp import get_slug
 
-from django.db import models, connection
+from django.db import models
 from django.db.models import Q
-from django.core.cache import cache
-from django.contrib.auth.models import User
-from django.db.models import Avg, Max, Min, Count
+from django.db.models import Max
+from django.conf import settings as global_settings
 
-from datetime import datetime
+from mptt.managers import TreeManager
 
 
-class PageManager(models.Manager):
+class FakePage():
+    """
+    Used for pageless Content object
+    """
+
+    def __init__(self):
+        self.id = -999  # an impossible number to get with DB id, do not change
+        self._content_dict = {}
+        self.freeze_date = None
+
+    def invalidate(self, content_type):
+        key = ContentManager.PAGE_CONTENT_DICT_KEY % (
+            self.id, content_type, 0)
+        cache.delete(key)
+        self._content_dict = None
+
+
+fake_page = FakePage()
+
+
+class PageManager(TreeManager):
     """
     Page manager provide several filters to obtain pages :class:`QuerySet`
     that respect the page attributes and project settings.
     """
 
-    def populate_pages(self, parent=None, child=5, depth=5):
-        """Create a population of :class:`Page <pages.models.Page>`
-        for testing purpose."""
-        from pages.models import Content
-        author = User.objects.all()[0]
-        if depth == 0:
-            return
-        p = self.model(parent=parent, author=author,
-            status=self.model.PUBLISHED)
-        p.save()
-        p = self.get(id=p.id)
-        Content(body='page-' + str(p.id), type='title',
-            language=settings.PAGE_DEFAULT_LANGUAGE, page=p).save()
-        Content(body='page-' + str(p.id), type='slug',
-            language=settings.PAGE_DEFAULT_LANGUAGE, page=p).save()
-        for child in range(1, child + 1):
-            self.populate_pages(parent=p, child=child, depth=(depth - 1))
+    if settings.PAGE_HIDE_SITES:
+        def get_query_set(self):
+            """Restrict operations to pages on the current site."""
+            return super(PageManager, self).get_query_set().filter(
+                sites=global_settings.SITE_ID)
 
     def on_site(self, site_id=None):
         """Return a :class:`QuerySet` of pages that are published on the site
@@ -45,7 +53,7 @@ class PageManager(models.Manager):
         """
         if settings.PAGE_USE_SITE_ID:
             if not site_id:
-                site_id = settings.SITE_ID
+                site_id = global_settings.SITE_ID
             return self.filter(sites=site_id)
         return self.all()
 
@@ -56,7 +64,7 @@ class PageManager(models.Manager):
     def navigation(self):
         """Creates a :class:`QuerySet` of the published root pages."""
         return self.on_site().filter(
-                status=self.model.PUBLISHED).filter(parent__isnull=True)
+            status=self.model.PUBLISHED).filter(parent__isnull=True)
 
     def hidden(self):
         """Creates a :class:`QuerySet` of the hidden pages."""
@@ -66,16 +74,16 @@ class PageManager(models.Manager):
         """Filter the given pages :class:`QuerySet` to obtain only published
         page."""
         if settings.PAGE_USE_SITE_ID:
-            queryset = queryset.filter(sites=settings.SITE_ID)
+            queryset = queryset.filter(sites=global_settings.SITE_ID)
 
         queryset = queryset.filter(status=self.model.PUBLISHED)
 
         if settings.PAGE_SHOW_START_DATE:
-            queryset = queryset.filter(publication_date__lte=datetime.now())
+            queryset = queryset.filter(publication_date__lte=get_now())
 
         if settings.PAGE_SHOW_END_DATE:
             queryset = queryset.filter(
-                Q(publication_end_date__gt=datetime.now()) |
+                Q(publication_end_date__gt=get_now()) |
                 Q(publication_end_date__isnull=True)
             )
 
@@ -91,14 +99,14 @@ class PageManager(models.Manager):
         :attr:`Page.publication_date`."""
         pub = self.on_site().filter(status=self.model.DRAFT)
         if settings.PAGE_SHOW_START_DATE:
-            pub = pub.filter(publication_date__gte=datetime.now())
+            pub = pub.filter(publication_date__gte=get_now())
         return pub
 
     def expired(self):
         """Creates a :class:`QuerySet` of expired using the page's
         :attr:`Page.publication_end_date`."""
         return self.on_site().filter(
-            publication_end_date__lte=datetime.now())
+            publication_end_date__lte=get_now())
 
     def from_path(self, complete_path, lang, exclude_drafts=True):
         """Return a :class:`Page <pages.models.Page>` according to
@@ -121,8 +129,8 @@ class PageManager(models.Manager):
             pages_list = pages_list.exclude(status=self.model.DRAFT)
         if len(pages_list) == 1:
             if(settings.PAGE_USE_STRICT_URL and
-                pages_list[0].get_complete_slug(lang) != complete_path):
-                    return None
+                    pages_list[0].get_complete_slug(lang) != complete_path):
+                return None
             return pages_list[0]
         # if more than one page is matching the slug,
         # we need to use the full URL
@@ -132,20 +140,18 @@ class PageManager(models.Manager):
                     return page
         return None
 
+    def from_slug(self, slug):
+        from pages.models import Content
+        content = Content.objects.get_content_slug_by_slug(slug)
+        if content is None:
+            raise ValueError("Slug '%s' didn't match any content." % slug)
+        return content.page
+
 
 class ContentManager(models.Manager):
     """:class:`Content <pages.models.Content>` manager methods"""
 
     PAGE_CONTENT_DICT_KEY = "page_content_dict_%d_%s_%d"
-
-    def sanitize(self, content):
-        """Sanitize a string in order to avoid possible XSS using
-        ``html5lib``."""
-        import html5lib
-        from html5lib import sanitizer
-        p = html5lib.HTMLParser(tokenizer=sanitizer.HTMLSanitizer)
-        dom_tree = p.parseFragment(content)
-        return dom_tree.toxml()
 
     def set_or_create_content(self, page, language, ctype, body):
         """Set or create a :class:`Content <pages.models.Content>` for a
@@ -156,8 +162,6 @@ class ContentManager(models.Manager):
         :param ctype: the content type.
         :param body: the content of the Content object.
         """
-        if settings.PAGE_SANITIZE_USER_INPUT:
-            body = self.sanitize(body)
         try:
             content = self.filter(page=page, language=language,
                                   type=ctype).latest('creation_date')
@@ -178,23 +182,24 @@ class ContentManager(models.Manager):
         :param ctype: the content type.
         :param body: the content of the Content object.
         """
-        if settings.PAGE_SANITIZE_USER_INPUT:
-            body = self.sanitize(body)
         try:
-            content = self.filter(page=page, language=language,
-                                  type=ctype).latest('creation_date')
+            content = self.filter(
+                page=page, language=language,
+                type=ctype).latest('creation_date')
             if content.body == body:
                 return content
         except self.model.DoesNotExist:
             pass
-        content = self.create(page=page, language=language, body=body,
-                type=ctype)
+        content = self.create(
+            page=page, language=language, body=body,
+            type=ctype)
 
         # Delete old revisions
         if settings.PAGE_CONTENT_REVISION_DEPTH:
-            oldest_content = self.filter(page=page, language=language,
-                type=ctype).order_by('-creation_date'
-                )[settings.PAGE_CONTENT_REVISION_DEPTH:]
+            oldest_content = self.filter(
+                page=page, language=language,
+                type=ctype
+            ).order_by('-creation_date')[settings.PAGE_CONTENT_REVISION_DEPTH:]
             for c in oldest_content:
                 c.delete()
 
@@ -206,11 +211,11 @@ class ContentManager(models.Manager):
         params = {
             'language': language,
             'type': ctype,
-            'page': page
+            'page': None if page is fake_page else page
         }
         if page.freeze_date:
             params['creation_date__lte'] = page.freeze_date
-        return  self.filter(**params).latest()
+        return self.filter(**params).latest()
 
     def get_content(self, page, language, ctype, language_fallback=False):
         """Gets the latest content string for a particular page, language and
@@ -221,11 +226,19 @@ class ContentManager(models.Manager):
         :param ctype: the content type.
         :param language_fallback: fallback to another language if ``True``.
         """
+        if page is None:
+            page = fake_page
+
+        if " " in ctype:
+            raise ValueError("Ctype cannot contain spaces.")
         if not language:
             language = settings.PAGE_DEFAULT_LANGUAGE
 
         frozen = int(bool(page.freeze_date))
         key = self.PAGE_CONTENT_DICT_KEY % (page.id, ctype, frozen)
+
+        # Spaces do not work with memcache
+        key = key.replace(' ', '-')
 
         if page._content_dict is None:
             page._content_dict = dict()
@@ -250,13 +263,12 @@ class ContentManager(models.Manager):
             cache.set(key, content_dict)
 
         if language in content_dict and content_dict[language]:
-            return filter_link(content_dict[language], page, language, ctype)
+            return content_dict[language]
 
         if language_fallback:
             for lang in settings.PAGE_LANGUAGES:
                 if lang[0] in content_dict and content_dict[lang[0]]:
-                    return filter_link(content_dict[lang[0]], page, lang[0],
-                        ctype)
+                    return content_dict[lang[0]]
         return ''
 
     def get_content_slug_by_slug(self, slug):
@@ -267,7 +279,7 @@ class ContentManager(models.Manager):
         """
         content = self.filter(type='slug', body=slug)
         if settings.PAGE_USE_SITE_ID:
-            content = content.filter(page__sites__id=settings.SITE_ID)
+            content = content.filter(page__sites__id=global_settings.SITE_ID)
         try:
             content = content.latest('creation_date')
         except self.model.DoesNotExist:

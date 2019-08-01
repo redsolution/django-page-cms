@@ -1,16 +1,15 @@
 """Default example views"""
 from pages import settings
 from pages.models import Page, PageAlias
-from pages.http import auto_render, get_language_from_request, remove_slug
+from pages.phttp import get_language_from_request, remove_slug
 from pages.urlconf_registry import get_urlconf
+from pages.utils import get_placeholders
 
 from django.http import Http404, HttpResponsePermanentRedirect
 from django.contrib.sitemaps import Sitemap
 from django.core.urlresolvers import resolve, Resolver404
 from django.utils import translation
-from django.shortcuts import render_to_response
-from django.template import RequestContext
-from django.core.xheaders import populate_xheaders
+from django.shortcuts import render
 
 LANGUAGE_KEYS = [key for (key, value) in settings.PAGE_LANGUAGES]
 
@@ -23,7 +22,8 @@ class Details(object):
     All is rendered with the current page's template.
     """
 
-    def __call__(self, request, path=None, lang=None, delegation=True,
+    def __call__(
+            self, request, path=None, lang=None, delegation=True,
             **kwargs):
 
         current_page = False
@@ -54,6 +54,14 @@ class Details(object):
 
         current_page = self.resolve_page(request, context, is_staff)
 
+        # Do redirect to new page (if enabled)
+        if settings.PAGE_REDIRECT_OLD_SLUG and current_page:
+            url = current_page.get_absolute_url(language=lang)
+            slug = current_page.get_complete_slug(language=lang)
+            current_url = request.get_full_path()
+            if url != path and url + '/' != current_url and slug != path:
+                return HttpResponsePermanentRedirect(url)
+
         # if no pages has been found, we will try to find it via an Alias
         if not current_page:
             redirection = self.resolve_alias(request, path, lang)
@@ -71,8 +79,6 @@ class Details(object):
         if redirection:
             return redirection
 
-        template_name = self.get_template(request, context)
-
         self.extra_context(request, context)
 
         if delegation and current_page.delegate_to:
@@ -80,38 +86,43 @@ class Details(object):
             if answer:
                 return answer
 
-        # do what the auto_render was used to do.
         if kwargs.get('only_context', False):
             return context
-        template_name = kwargs.get('template_name', template_name)
-        response = render_to_response(template_name,
-            RequestContext(request, context))
-        current_page = context['current_page']
-        populate_xheaders(request, response, Page, current_page.id)
-        return response
+        template_name = kwargs.get(
+            'template_name',
+            self.get_template(request, context))
+
+        context['template_name'] = template_name
+
+        return render(request, template_name, context)
 
     def resolve_page(self, request, context, is_staff):
         """Return the appropriate page according to the path."""
         path = context['path']
         lang = context['lang']
-        page = Page.objects.from_path(path, lang,
+        page = Page.objects.from_path(
+            path, lang,
             exclude_drafts=(not is_staff))
         if page:
             return page
-        # if the complete path didn't worked out properly we gonna
+        # if the complete path didn't worked out properly
+        # and if didn't used PAGE_USE_STRICT_URL setting we gonna
         # try to see if it might be a delegation page.
         # To do that we remove the right part of the url and try again
         # to find a page that match
-        path = remove_slug(path)
-        while path is not None:
-            page = Page.objects.from_path(path, lang,
-                exclude_drafts=(not is_staff))
-            # find a match. Is the page delegating?
-            if page:
-                if page.delegate_to:
-                    return page
+        if not settings.PAGE_USE_STRICT_URL:
             path = remove_slug(path)
-        return page
+            while path is not None:
+                page = Page.objects.from_path(
+                    path, lang,
+                    exclude_drafts=(not is_staff))
+                # find a match. Is the page delegating?
+                if page:
+                    if page.delegate_to:
+                        return page
+                path = remove_slug(path)
+
+        return None
 
     def resolve_alias(self, request, path, lang):
         alias = PageAlias.objects.from_path(request, path, lang)
@@ -186,14 +197,13 @@ class Details(object):
         if result:
             view, args, kwargs = result
             kwargs.update(context)
-            # for now the view is called as is. Usage of
-            # the auto_render decorator could simplify a few things.
+            # for now the view is called as is.
             return view(request, *args, **kwargs)
 
 
-# The view view instance. It's the same object for
+# The Details view instance. It's the same object for
 # everybody so be careful to maintain it thread safe.
-# ie: NO self.attrbitute = something
+# ie: NO self.attribute = something
 details = Details()
 
 
