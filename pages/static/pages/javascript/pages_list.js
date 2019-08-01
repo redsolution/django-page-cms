@@ -263,7 +263,7 @@ $(function($) {
             if(down) {
               move_y = start_y - e.pageY;
               // we have a drag an drop
-              if(Math.abs(move_y) > 8 && !drag_initiated) {
+              if(Math.abs(move_y) > 12 && !drag_initiated) {
                 indicator = $(".drag-indicator");
                 indicator.show();
                 $(".moved-page-title").text(line.find(".title").text());
@@ -317,11 +317,20 @@ $(function($) {
             return false;
         });
 
+        function reset_draganddrop() {
+            $(line).css("opacity", "1");
+            $(".drag-indicator").hide();
+            down = false;
+            drag_initiated = false;
+            lines_position = []
+            return;
+        }
+
         $(document).on("mouseup", function(e) {
-            if(down == false) {
+            if(down == false || !choosen_line) {
+                reset_draganddrop();
                 return;
             }
-
             // release
             var target_line_id = choosen_line.el.id.split('page-row-')[1];
 
@@ -329,12 +338,7 @@ $(function($) {
               drag_initiated = false;
                 move_page(line_id, insert_at, target_line_id);
             }
-
-            $(line).css("opacity", "1");
-            $(".drag-indicator").hide();
-            down = false;
-            drag_initiated = false;
-            lines_position = [];
+            reset_draganddrop();
         });
 
     }
