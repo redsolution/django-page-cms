@@ -17,10 +17,6 @@ class Migration(migrations.Migration):
             name='page',
             options={'get_latest_by': 'publication_date', 'ordering': ['tree_id', 'lft'], 'permissions': [('can_freeze', 'Can freeze page'), ('can_publish', 'Can publish page'), ('can_manage_en_us', 'Manage US English')], 'verbose_name': 'page', 'verbose_name_plural': 'pages'},
         ),
-        migrations.RemoveField(
-            model_name='page',
-            name='sites',
-        ),
         migrations.AlterField(
             model_name='media',
             name='extension',
