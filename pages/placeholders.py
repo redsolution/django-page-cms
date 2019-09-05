@@ -49,7 +49,7 @@ def parse_placeholder(parser, token):
         name = bits[1]
     remaining = bits[2:]
     simple_options = ['parsed', 'inherited', 'untranslated', 'shared', 'block']
-    param_options = ['as', 'on', 'with', 'section']
+    param_options = ['as', 'on', 'with', 'section', 'label']
     all_options = simple_options + param_options
     while remaining:
         bit = remaining[0]
@@ -64,6 +64,8 @@ def parse_placeholder(parser, token):
                 params['as_varname'] = remaining[1]
             if bit == 'with':
                 params['widget'] = remaining[1]
+            if bit == 'label':
+                params['label'] = remaining[1][1:-1]
             if bit == 'on':
                 params['page'] = remaining[1]
             if bit == 'section':
@@ -86,7 +88,6 @@ def parse_placeholder(parser, token):
             nodelist = parser.parse(('endplaceholder',))
             parser.delete_first_token()
             params['nodelist'] = nodelist
-
     return name, params
 
 
@@ -114,7 +115,7 @@ class PlaceholderNode(template.Node):
     widget = TextInput
 
     def __init__(
-            self, name, page=None, widget=None, parsed=False,
+            self, name, label=None, page=None, widget=None, parsed=False,
             as_varname=None, inherited=False, untranslated=False,
             has_revision=True, section=None, shared=False, nodelist=None):
         """Gather parameters for the `PlaceholderNode`.
@@ -122,6 +123,7 @@ class PlaceholderNode(template.Node):
         These values should be thread safe and don't change between calls."""
         self.page = page or 'current_page'
         self.name = name
+        self.label = label or name.replace('_', ' ')
         self.ctype = name.replace(" ", "_")
         if widget:
             self.widget = widget
@@ -169,6 +171,7 @@ class PlaceholderNode(template.Node):
             help_text = ''
         widget = self.get_widget(page, language)
         return self.field(
+            label=self.label,
             widget=widget, initial=initial,
             help_text=help_text, required=False)
 
@@ -191,14 +194,16 @@ class PlaceholderNode(template.Node):
                     page,
                     language,
                     self.ctype,
-                    data
+                    data,
+                    self.label
                 )
             else:
                 Content.objects.set_or_create_content(
                     page,
                     language,
                     self.ctype,
-                    data
+                    data,
+                    self.label
                 )
         # the page is being added
         else:
@@ -206,7 +211,8 @@ class PlaceholderNode(template.Node):
                 page,
                 language,
                 self.ctype,
-                data
+                data,
+                self.label
             )
 
     def get_content(self, page_obj, lang, lang_fallback=True):

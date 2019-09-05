@@ -153,7 +153,7 @@ class ContentManager(models.Manager):
 
     PAGE_CONTENT_DICT_KEY = "page_content_dict_%d_%s_%d"
 
-    def set_or_create_content(self, page, language, ctype, body):
+    def set_or_create_content(self, page, language, ctype, body, label):
         """Set or create a :class:`Content <pages.models.Content>` for a
         particular page and language.
 
@@ -166,13 +166,14 @@ class ContentManager(models.Manager):
             content = self.filter(page=page, language=language,
                                   type=ctype).latest('creation_date')
             content.body = body
+            content.label = label
         except self.model.DoesNotExist:
             content = self.model(page=page, language=language, body=body,
-                                 type=ctype)
+                                 type=ctype, label=label)
         content.save()
         return content
 
-    def create_content_if_changed(self, page, language, ctype, body):
+    def create_content_if_changed(self, page, language, ctype, body, label):
         """Create a :class:`Content <pages.models.Content>` for a particular
         page and language only if the content has changed from the last
         time.
@@ -186,13 +187,13 @@ class ContentManager(models.Manager):
             content = self.filter(
                 page=page, language=language,
                 type=ctype).latest('creation_date')
-            if content.body == body:
+            if content.body == body and label == label :
                 return content
         except self.model.DoesNotExist:
             pass
         content = self.create(
             page=page, language=language, body=body,
-            type=ctype)
+            type=ctype, label=label)
 
         # Delete old revisions
         if settings.PAGE_CONTENT_REVISION_DEPTH:
