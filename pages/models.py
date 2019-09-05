@@ -521,6 +521,7 @@ class Content(models.Model):
     creation_date = models.DateTimeField(
         _('creation date'), editable=False,
         default=get_now)
+    label = models.CharField(_('label'), max_length=100, blank=False)
     objects = ContentManager()
 
     class Meta:
