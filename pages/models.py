@@ -16,7 +16,6 @@ from django.utils.safestring import mark_safe
 from django.core.urlresolvers import reverse
 from django.conf import settings as global_settings
 from django.utils.encoding import python_2_unicode_compatible
-from mptt.signals import node_moved
 
 
 from mptt.models import MPTTModel
@@ -522,6 +521,7 @@ class Content(models.Model):
     creation_date = models.DateTimeField(
         _('creation date'), editable=False,
         default=get_now)
+    label = models.CharField(_('label'), max_length=100, blank=False)
     objects = ContentManager()
 
     class Meta:
@@ -609,9 +609,3 @@ class Media(models.Model):
 
     def __str__(self):
         return self.url.name
-
-def page_changed(sender, instance, **kwargs):
-    cache.delete(instance.PAGE_URL_KEY % (instance.id))
-    cache.delete(instance.ANCESTORS_KEY % instance.id)
-
-node_moved.connect(receiver=page_changed, sender=Page)
