@@ -45,7 +45,7 @@ install_requires = [
     'Django>=2.1.5,<4',
     'django-mptt>=0.9',
     'django-taggit>=1.1.0',
-    'Pillow>=3.2',
+    'Pillow>=3.2,<8',
     'requests>=2.20',
     'tqdm>=4.4.1',
 ]
