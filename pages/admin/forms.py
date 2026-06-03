@@ -10,7 +10,7 @@ from pages.models import Page, Content
 
 from pages.urlconf_registry import get_choices
 from pages.widgets import LanguageChoiceWidget
-import collections
+import typing
 
 error_dict = {
     'another_page_error': _('Another page with this slug already exists'),
@@ -23,7 +23,7 @@ error_dict = {
 def automatic_slug_renaming(slug, is_slug_safe):
     """Helper to add numbers to slugs"""
 
-    if not isinstance(is_slug_safe, collections.Callable):
+    if not isinstance(is_slug_safe, typing.Callable):
         raise TypeError('is_slug_safe must be callable')
 
     if is_slug_safe(slug):
